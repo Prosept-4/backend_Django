@@ -6,6 +6,7 @@ from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from backend.celery import long_running_task
 
 
+
 class AuthViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
