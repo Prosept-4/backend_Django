@@ -7,7 +7,7 @@ class Dealer(models.Model):
         verbose_name='Название',
         max_length=256,
     )
-    
+
     class Meta:
         verbose_name = 'Дилер'
         verbose_name_plural = 'Дилеры'
@@ -48,11 +48,10 @@ class Price(models.Model):
         verbose_name='Идентефикатор дилера',
         max_length=256,
     )
-    
+
     class Meta:
         verbose_name = 'Цена дилера'
         verbose_name_plural = 'Цены дилеров'
-        
 
     def __str__(self) -> str:
         return self.key
@@ -117,14 +116,13 @@ class Product(models.Model):
         max_length=256,
     )
 
-    
     class Meta:
         verbose_name = 'Продукт'
         verbose_name_plural = 'Продукты'
-        
+
     def __str__(self) -> str:
         return self.name
-    
+
 
 class Match(models.Model):
     """Таблица мэтчинга товаров заказчика и дилера"""
@@ -150,13 +148,9 @@ class Match(models.Model):
         on_delete=models.CASCADE,
     )
 
-    
     class Meta:
         verbose_name = 'Товар дилера'
         verbose_name_plural = 'Товары дилера'
-        
+
     def __str__(self) -> str:
         return self.key
-
-
-

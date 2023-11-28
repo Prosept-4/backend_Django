@@ -5,19 +5,20 @@ from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 from dotenv import load_dotenv
 
-load_dotenv()
+from core.environment import (SECRET_KEY, DEBUG, ALLOWED_HOSTS,
+                              DB_ENGINE, IS_LOGGING)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
+SECRET_KEY = SECRET_KEY
 
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = DEBUG
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(' ')
+ALLOWED_HOSTS = ALLOWED_HOSTS
 
-DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite3')  # sqlite3 или postgresql
+DB_ENGINE = DB_ENGINE
 
-IS_LOGGING = os.getenv('IS_LOGGING', 'False') == 'True'
+IS_LOGGING = IS_LOGGING
 
 if IS_LOGGING:
     LOGGING = {
@@ -47,7 +48,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'djoser',
     'drf_yasg',
-
 ]
 
 MIDDLEWARE = [

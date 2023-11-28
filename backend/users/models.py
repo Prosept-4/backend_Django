@@ -105,9 +105,9 @@ class User(AbstractUser):
         max_length=EMAIL_LENGTH,
         unique=True,
     )
-    telegram_id = models.PositiveSmallIntegerField(
+    telegram_id = models.IntegerField(
         'Telegram id',
-        null=False,
+        null=True,
         blank=True,
         help_text='Введите ваш Telegram id'
     )
