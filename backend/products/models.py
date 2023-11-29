@@ -32,7 +32,7 @@ class Price(models.Model):
         verbose_name='Цена',
         max_length=256,
     )
-    product_url = models.SlugField(
+    product_url = models.URLField(
         verbose_name='Адрес страницы, откуда собранны данные',
         max_length=2560,
     )
@@ -47,6 +47,12 @@ class Price(models.Model):
     dealer_id = models.CharField(
         verbose_name='Идентефикатор дилера',
         max_length=256,
+    )
+    is_match = models.BooleanField(
+        default=False,
+    )
+    coincidence = models.BooleanField(
+        default=False,
     )
 
     class Meta:
@@ -69,7 +75,7 @@ class Product(models.Model):
     )
     ean_13 = models.CharField(
         verbose_name='Код товара',
-        max_length=13,
+        max_length=15,
     )
     name = models.CharField(
         verbose_name='Название товара',
