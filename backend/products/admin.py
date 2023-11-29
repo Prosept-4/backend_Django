@@ -1,35 +1,35 @@
 from django.contrib import admin
 
-from .models import (Dealer,
-                     Price,
-                     Product,
-                     Match)
+from products.models import (Dealer, DealerParsing, Product,
+                             Match, MatchingPredictions)
 
 
 class DealerAdmin(admin.ModelAdmin):
     list_display = (
-        'pk',
+        'id',
         'name'
     )
 
 
-class PriceAdmin(admin.ModelAdmin):
+class DealerParsingAdmin(admin.ModelAdmin):
     list_display = (
-        'pk',
+        'id',
         'product_key',
         'price',
         'product_url',
         'product_name',
         'date',
         'dealer_id',
-        'is_match',
-        'coincidence',
+        'is_matched',
+        'has_no_matches',
+        'matching_date',
+        'has_no_matches_toggle_date',
     )
 
 
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
-        'pk',
+        'id',
         'id_product',
         'article',
         'ean_13',
@@ -49,14 +49,23 @@ class ProductAdmin(admin.ModelAdmin):
 
 class MatchAdmin(admin.ModelAdmin):
     list_display = (
-        'pk',
+        'id',
         'key',
         'dealer_id',
         'product_id',
     )
 
 
+class MatchingPredictionsAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'prosept_product_id',
+        'dealer_product_id',
+    )
+
+
 admin.site.register(Dealer, DealerAdmin)
-admin.site.register(Price, PriceAdmin)
+admin.site.register(DealerParsing, DealerParsingAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Match, MatchAdmin)
+admin.site.register(MatchingPredictions, MatchingPredictionsAdmin)
