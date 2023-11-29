@@ -3,10 +3,7 @@ import csv
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from products.models import (Dealer,
-                             Price,
-                             Product,
-                             Match)
+from products.models import Dealer
 
 
 class Command(BaseCommand):

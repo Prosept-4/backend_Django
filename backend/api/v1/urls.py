@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import (TokenObtainPairView,
 from api.v1.views import AuthViewSet, TelegramTest
 from users.views import CustomUserViewSet
 from .views import (DealerViewSet,
-                    PriceViewSet,
+                    DealerParsingViewSet,
                     ProductViewSet,
                     MatchViewSet)
 
@@ -16,7 +16,7 @@ router = DefaultRouter()
 router.register(r'users', CustomUserViewSet)
 router.register(r'auth', AuthViewSet, basename='auth')
 router.register(r'dealer', DealerViewSet)
-router.register(r'dealer-price', PriceViewSet)
+router.register(r'dealer-price', DealerParsingViewSet)
 router.register(r'product', ProductViewSet)
 router.register(r'match', MatchViewSet)
 
