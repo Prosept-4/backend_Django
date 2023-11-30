@@ -11,3 +11,4 @@ psycopg2-binary==2.9.9
 python-dotenv==1.0.0
 reportlab==3.6.12
 python-telegram-bot==20.7
+django-import-export==3.3.3

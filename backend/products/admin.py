@@ -1,17 +1,19 @@
 from django.contrib import admin
 
+from import_export.admin import ImportExportModelAdmin
+
 from products.models import (Dealer, DealerParsing, Product,
                              Match, MatchingPredictions)
 
 
-class DealerAdmin(admin.ModelAdmin):
+class DealerAdmin(ImportExportModelAdmin):
     list_display = (
         'id',
         'name'
     )
 
 
-class DealerParsingAdmin(admin.ModelAdmin):
+class DealerParsingAdmin(ImportExportModelAdmin):
     list_display = (
         'id',
         'product_key',
@@ -27,7 +29,7 @@ class DealerParsingAdmin(admin.ModelAdmin):
     )
 
 
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(ImportExportModelAdmin):
     list_display = (
         'id',
         'id_product',
@@ -47,7 +49,7 @@ class ProductAdmin(admin.ModelAdmin):
     )
 
 
-class MatchAdmin(admin.ModelAdmin):
+class MatchAdmin(ImportExportModelAdmin):
     list_display = (
         'id',
         'key',
