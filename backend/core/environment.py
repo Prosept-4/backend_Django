@@ -13,7 +13,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(' ')
 
 DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite3')  # sqlite3 или postgresql
 
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = True
 
 IS_LOGGING = os.getenv('IS_LOGGING', 'False') == 'True'
 
