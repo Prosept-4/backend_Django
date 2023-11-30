@@ -58,21 +58,31 @@ class DealerParsing(models.Model):
         verbose_name='Артикул товара',
         max_length=256,
         unique=True,
+        blank=True,
+        null=True,
     )
     price = models.CharField(
         verbose_name='Цена',
         max_length=256,
+        blank=True,
+        null=True,
     )
     product_url = models.URLField(
         verbose_name='Адрес страницы, откуда собранны данные',
         max_length=2560,
+        blank=True,
+        null=True,
     )
     product_name = models.CharField(
         verbose_name='Заголовок продаваемого товара',
         max_length=256,
+        blank=True,
+        null=True,
     )
     date = models.DateField(
-        verbose_name='Дата получения информации'
+        verbose_name='Дата получения информации',
+        blank=True,
+        null=True,
     )
     dealer_id = models.ForeignKey(
         Dealer,
@@ -80,14 +90,18 @@ class DealerParsing(models.Model):
         related_name='parsing_entries',
         to_field='id',
         on_delete=models.CASCADE,
+        blank=True,
+        null=True,
     )
     is_matched = models.BooleanField(
         default=False,
+        blank=True,
+        null=True,
     )
     matching_date = models.DateField(
         verbose_name='Дата связывания',
         null=True,
-        blank=True
+        blank=True,
     )
     has_no_matches = models.BooleanField(
         default=False,
@@ -134,60 +148,88 @@ class Product(models.Model):
     """
     id_product = models.CharField(
         verbose_name='ID товара',
-        max_length=256,
+        max_length=2560,
         unique=True,
+        blank=True,
+        null=True,
     )
     article = models.CharField(
         verbose_name='Артикул товара',
         max_length=256,
+        blank=True,
+        null=True,
     )
     ean_13 = models.CharField(
         verbose_name='Код товара',
         max_length=15,
+        blank=True,
+        null=True,
     )
     name = models.CharField(
         verbose_name='Название товара',
         max_length=256,
+        blank=True,
+        null=True,
     )
     cost = models.CharField(
         verbose_name='Стоимость',
         max_length=256,
+        blank=True,
+        null=True,
     )
     recommended_price = models.CharField(
         verbose_name='Рекомендованная цена',
         max_length=256,
+        blank=True,
+        null=True,
     )
     category_id = models.CharField(
         verbose_name='Категория товара',
         max_length=256,
+        blank=True,
+        null=True,
     )
     ozon_name = models.CharField(
         verbose_name='Название товара на Озоне',
         max_length=256,
+        blank=True,
+        null=True,
     )
     name_1c = models.CharField(
         verbose_name='Название товара в 1С',
         max_length=256,
+        blank=True,
+        null=True,
     )
     wb_name = models.CharField(
         verbose_name='Название товара на WB',
         max_length=256,
+        blank=True,
+        null=True,
     )
     ozon_article = models.CharField(
         verbose_name='Артикул для Озон',
         max_length=256,
+        blank=True,
+        null=True,
     )
     wb_article = models.CharField(
         verbose_name='Артикул для WB',
         max_length=256,
+        blank=True,
+        null=True,
     )
     ym_article = models.CharField(
         verbose_name='Артикул для Яндекс.Маркета',
         max_length=256,
+        blank=True,
+        null=True,
     )
     wb_article_td = models.CharField(
         verbose_name='Артикул_ВБ_тд',
         max_length=256,
+        blank=True,
+        null=True,
     )
 
     class Meta:
@@ -223,13 +265,8 @@ class Match(models.Model):
         related_name='matches',
         to_field='product_key',
         on_delete=models.CASCADE,
-    )
-    product_id = models.ForeignKey(
-        Product,
-        verbose_name='Продукт Prosept',
-        related_name='matches',
-        to_field='id_product',
-        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
     )
     dealer_id = models.ForeignKey(
         Dealer,
@@ -237,7 +274,20 @@ class Match(models.Model):
         related_name='matches',
         to_field='id',
         on_delete=models.CASCADE,
+        blank=True,
+        null=True,
     )
+    product_id = models.ForeignKey(
+        Product,
+        verbose_name='Продукт Prosept',
+        related_name='matches',
+        to_field='id_product',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        
+    )
+    
 
     class Meta:
         verbose_name = 'Связанный товар'
