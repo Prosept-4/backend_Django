@@ -12,8 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = SECRET_KEY
 
-DEBUG = DEBUG
-
+DEBUG = True
 ALLOWED_HOSTS = ALLOWED_HOSTS
 
 DB_ENGINE = DB_ENGINE
