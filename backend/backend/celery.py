@@ -5,7 +5,7 @@ from celery import Celery
 from telegram import Bot
 
 from core.environment import BOT_TOKEN
-from products.models import MatchingPredictions
+
 
 logger = logging.getLogger(__name__)
 
@@ -37,18 +37,25 @@ async def send_telegram_message(chat_id, message):
 
 
 @app.task
-def make_predictions(data, chat_id=None):
+def make_predictions(dealer_data,
+                     prosept_products,
+                     dealers,
+                     matches,
+                     chat_id=None):
     try:
         # TODO: Сюда ставим вызов ML модели, передаём в неё массив для анализа.
-        ml_results = start_ml(data)
+        # ml_results = start_ml(dealer_data,
+        #                       prosept_products,
+        #                       dealers,
+        #                       matches)
 
         # Обработка результатов ML и создание записей в БД
-        for dealer_product_id, prosept_product_ids in ml_results.items():
-            for prosept_product_id in prosept_product_ids:
-                MatchingPredictions.objects.create(
-                    dealer_product_id=dealer_product_id,
-                    prosept_product_id=prosept_product_id
-                )
+        # for dealer_product_id, prosept_product_ids in ml_results.items():
+        #     for prosept_product_id in prosept_product_ids:
+        #         MatchingPredictions.objects.create(
+        #             dealer_product_id=dealer_product_id,
+        #             prosept_product_id=prosept_product_id
+        #         )
 
         message = 'Расчёт совпадений завершён успешно.'
         logger.info(message)

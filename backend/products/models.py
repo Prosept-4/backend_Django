@@ -144,6 +144,8 @@ class Product(models.Model):
     ean_13 = models.CharField(
         verbose_name='Код товара',
         max_length=15,
+        null=True,
+        blank=True
     )
     name = models.CharField(
         verbose_name='Название товара',
@@ -164,6 +166,8 @@ class Product(models.Model):
     ozon_name = models.CharField(
         verbose_name='Название товара на Озоне',
         max_length=256,
+        null=True,
+        blank=True
     )
     name_1c = models.CharField(
         verbose_name='Название товара в 1С',
@@ -172,22 +176,32 @@ class Product(models.Model):
     wb_name = models.CharField(
         verbose_name='Название товара на WB',
         max_length=256,
+        null=True,
+        blank=True
     )
     ozon_article = models.CharField(
         verbose_name='Артикул для Озон',
         max_length=256,
+        null=True,
+        blank=True
     )
     wb_article = models.CharField(
         verbose_name='Артикул для WB',
         max_length=256,
+        null=True,
+        blank=True
     )
     ym_article = models.CharField(
         verbose_name='Артикул для Яндекс.Маркета',
         max_length=256,
+        null=True,
+        blank=True
     )
     wb_article_td = models.CharField(
         verbose_name='Артикул_ВБ_тд',
         max_length=256,
+        null=True,
+        blank=True
     )
 
     class Meta:
