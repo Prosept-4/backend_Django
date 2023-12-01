@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from rest_framework import serializers
 
 
@@ -70,3 +72,17 @@ class MatchSerializer(serializers.ModelSerializer):
             'dealer_id',
             'product_id',
         )
+
+
+class MatchPartialUpdateSerializer(serializers.ModelSerializer):
+
+    def update(self, instance, validated_data):
+        # Обновляем данные
+        instance.key = validated_data.get('key', instance.key)
+        instance.key.matching_date = datetime.now().strftime("%Y-%m-%d")
+        instance.save()
+        return instance
+
+    class Meta:
+        model = Match
+        fields = ['key', 'dealer_id', 'product_id']

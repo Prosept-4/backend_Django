@@ -16,7 +16,7 @@ router = DefaultRouter()
 router.register(r'users', CustomUserViewSet)
 router.register(r'auth', AuthViewSet, basename='auth')
 router.register(r'dealer', DealerViewSet)
-router.register(r'dealer-price', DealerParsingViewSet)
+router.register(r'dealer-products', DealerParsingViewSet)
 router.register(r'product', ProductViewSet)
 router.register(r'match', MatchViewSet)
 
