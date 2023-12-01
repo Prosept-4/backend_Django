@@ -24,6 +24,8 @@ class DealerParsingAdmin(ImportExportModelAdmin):
         'dealer_id',
         'is_matched',
         'has_no_matches',
+        'is_postponed',
+        'postpone_date',
         'matching_date',
         'has_no_matches_toggle_date',
     )
