@@ -54,6 +54,28 @@ class MatchViewSet(viewsets.ModelViewSet):
     serializer_class = MatchSerializer
     pagination_class = None
 
+    def post(self):
+        # Проверяем есть ли запись мэтча в таблице.
+        # Если записи нет - создаём мэтч.
+        # В DealerParsing меняем is_matched на True и добавляем дату в
+        # Поле matching_date.
+        pass
+
+    def patch(self):
+        # При PATCH запросе проверяем есть ли запись мэтча в таблице.
+        # Если запись есть — у текущей записи меняем в DealerParsing поле
+        # is_matched на False и убираем дату из поля matching_date.
+        # После этого меняем связь на новую. Далее по аналогии.
+        # Для новой связи в DealerParsing меняем is_matched на
+        # True и добавляем дату в поле matching_date.
+        pass
+
+    def delete(self):
+        # При delete запросе проверяем есть ли запись мэтча в таблице.
+        # Если запись есть — сначала в DealerParsing меняем is_matched на
+        # False и удаляем дату из поля matching_date.
+        # После этого удаляем сам мэтч из таблицы.
+        pass
 
 class MatchingPredictionsViewSet(viewsets.ModelViewSet):
     """Вьюсет мэтч предикшнов"""
@@ -82,10 +104,29 @@ class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
         )
         serializer = self.get_serializer(dealer_parsing_entries, many=True)
 
-        # Можно преобразовать в json и отдавать его.
-        # Если пойдёт OrderedDict, то отдаём просто serializer.data.
-        json_data_to_ml = json.dumps(serializer.data)
+        from django.core.serializers import serialize
 
+        # Достаём данные о продуктах Просепт и дилерах.
+        # Так же по просьбе DS достаём данные о соответствиях.
+
+        prosept_products_queryset = Product.objects.all()
+        dealer_queryset = Dealer.objects.all()
+        match_queryset = Match.objects.all()
+
+        serialized_prosept_products = serialize('json',
+                                                prosept_products_queryset)
+        serialized_dealers = serialize('json', dealer_queryset)
+        serialized_matches = serialize('json', match_queryset)
+
+        json_dealer_data = json.dumps(serializer.data)
+        json_prosept_products = json.loads(serialized_prosept_products)
+        json_dealers = json.loads(serialized_dealers)
+        json_matches = json.loads(serialized_matches)
+
+        # Проверим заведён ли у пользователя Telegram ID.
+        # Это нужно для отправки ему сообщения о готовности подбора или
+        # информации об ошибках.
+        error_message = ''
         try:
             # Получаем текущего пользователя
             current_user = request.user
@@ -97,13 +138,17 @@ class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
                              'Telegram не будет отправлено.')
             chat_id = None
 
-        # Запускаем задачу в фоновом режиме
-        make_predictions.delay(json_data_to_ml, chat_id)
-
+        # Запускаем задачу в фоновом режиме.
         # Здесь передаём данные в celery, а после в ML модель.
-        # start_ml_celery.delay(json_data_to_ml)
+        make_predictions.delay(make_predictions,
+                               json_dealer_data,
+                               json_prosept_products,
+                               json_dealers,
+                               json_matches,
+                               chat_id)
 
         return Response(
-            {'detail': 'Данные успешно переданы в ML модель.'},
+            {'detail': f'Данные успешно переданы '
+                       f'в ML модель. ' + error_message},
             status=HTTP_200_OK
         )
