@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-
+from rest_framework.mixins import UpdateModelMixin
 from django.db.models import Subquery, OuterRef
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
@@ -8,12 +8,15 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_200_OK, HTTP_201_CREATED,
                                    HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST,
-                                   HTTP_404_NOT_FOUND)
-
+                                   HTTP_404_NOT_FOUND,
+                                   HTTP_405_METHOD_NOT_ALLOWED)
+from drf_yasg.utils import swagger_auto_schema
 from api.v1.serializers import (DealerSerializer,
                                 DealerParsingSerializer,
                                 ProductSerializer,
-                                MatchSerializer)
+                                MatchSerializer,
+                                DealerParsingPostponeSerializer,
+                                DealerParsingNoMatchesSerializer)
 from backend.celery import make_predictions
 from core.pagination import CustomPagination
 from products.models import (Dealer, DealerParsing, Product, Match,
@@ -49,6 +52,224 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     pagination_class = CustomPagination
+
+
+class PostponeViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
+    """
+    ViewSet для работы с отложенными элементами DealerParsing.
+
+    Позволяет просматривать отложенные элементы и выполнять
+    частичное обновление.
+
+    Атрибуты класса:
+        - `queryset`: набор данных для запросов;
+        - `serializer_class`: класс сериализатора для преобразования данных;
+        - `pagination_class`: класс пагинации для разбивки
+        результатов на страницы.
+
+    Методы:
+        - `list`: возвращает список отложенных элементов
+        с применением пагинации;
+        - `retrieve`: возвращает детали отдельного отложенного элемента;
+        - `partial_update`: частично обновляет отложенный элемент;
+        - `update`: возвращает ошибку метода не разрешен (HTTP 405).
+
+    Атрибуты запроса:
+        - `request`: объект запроса;
+        - `args`: дополнительные аргументы;
+        - `kwargs`: дополнительные именованные аргументы.
+
+    Возвращает:
+        - `Response`: объект ответа с данными отложенных элементов
+    или ошибкой метода не разрешен.
+    """
+    queryset = DealerParsing.objects.all()
+    serializer_class = DealerParsingPostponeSerializer
+    pagination_class = CustomPagination
+
+    def list(self, request, *args, **kwargs):
+        """
+        Возвращает список отложенных элементов с применением пагинации.
+
+        Аргументы:
+            - `request`: объект запроса;
+            - `args`: дополнительные аргументы;
+            - `kwargs`: дополнительные именованные аргументы.
+
+        Возвращает:
+        - `Response`: объект ответа с данными отложенных
+        элементов и метаданными пагинации.
+
+        Пример использования:
+            GET /api/postpone/
+        """
+        queryset = DealerParsing.objects.filter(is_postponed=True)
+        page = self.paginate_queryset(queryset)
+        serializer = self.serializer_class(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Возвращает детали отдельного отложенного элемента.
+
+        Аргументы:
+            - `request`: объект запроса;
+            - `args`: дополнительные аргументы;
+            - `kwargs`: дополнительные именованные аргументы.
+
+        Возвращает:
+            - `Response`: объект ответа с данными отдельного
+            отложенного элемента.
+
+        Пример использования:
+            GET /postpone/<id>/
+        """
+        instance = self.get_object()
+        serializer = self.serializer_class(instance)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Частично обновляет отложенный элемент.
+
+        Аргументы:
+            - `request`: объект запроса;
+            - `args`: дополнительные аргументы;
+            - `kwargs`: дополнительные именованные аргументы.
+
+        Возвращает:
+            - `Response`: объект ответа с обновленными данными отложенного элемента.
+
+        Пример использования:
+            PATCH /postpone/<id>/
+        """
+        instance = self.get_object()
+        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=HTTP_200_OK)
+
+    @swagger_auto_schema(auto_schema=None)
+    def update(self, request, *args, **kwargs):
+        """
+        Возвращает ошибку метода не разрешен (HTTP 405).
+
+        Этот метод будет скрыт в Swagger.
+
+        Возвращает:
+        - `Response`: объект ответа с ошибкой метода не разрешен.
+        """
+        return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
+    """
+    ViewSet для работы с элементами DealerParsing, у которых
+    нет соответствий.
+
+    Позволяет просматривать элементы без соответствий и
+    выполнять частичное обновление.
+
+    Атрибуты класса:
+    - `queryset`: набор данных для запросов;
+    - `serializer_class`: класс сериализатора для преобразования данных;
+    - `pagination_class`: класс пагинации для разбивки
+    результатов на страницы.
+
+    Методы:
+    - `list`: возвращает список элементов без соответствий
+    с применением пагинации;
+    - `retrieve`: возвращает детали отдельного элемента без соответствий;
+    - `partial_update`: частично обновляет элемент без соответствий;
+    - `update`: возвращает ошибку метода не разрешен (HTTP 405).
+
+    Атрибуты запроса:
+    - `request`: объект запроса;
+    - `args`: дополнительные аргументы;
+    - `kwargs`: дополнительные именованные аргументы.
+
+    Возвращает:
+    - `Response`: объект ответа с данными элементов без
+    соответствий или ошибкой запрещённого метода PUT.
+    """
+    queryset = DealerParsing.objects.all()
+    serializer_class = DealerParsingNoMatchesSerializer
+    pagination_class = CustomPagination
+
+    def list(self, request, *args, **kwargs):
+        """
+        Возвращает список элементов без соответствий с применением пагинации.
+
+        Аргументы:
+            - `request`: объект запроса;
+            - `args`: дополнительные аргументы;
+            - `kwargs`: дополнительные именованные аргументы.
+
+        Возвращает:
+            - `Response`: объект ответа с данными элементов без
+            соответствий и метаданными пагинации.
+
+        Пример использования:
+            GET /no-matches/
+        """
+        queryset = DealerParsing.objects.filter(has_no_matches=True)
+        page = self.paginate_queryset(queryset)
+        serializer = self.serializer_class(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Возвращает детали отдельного элемента без соответствий.
+
+        Аргументы:
+            - `request`: объект запроса;
+            - `args`: дополнительные аргументы;
+            - `kwargs`: дополнительные именованные аргументы.
+
+        Возвращает:
+            - `Response`: объект ответа с данными отдельного
+            элемента без соответствий.
+
+        Пример использования:
+            GET /no-matches/<id>/
+        """
+        instance = self.get_object()
+        serializer = self.serializer_class(instance)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Частично обновляет элемент без соответствий.
+
+        Аргументы:
+            - `request`: объект запроса;
+            - `args`: дополнительные аргументы;
+            - `kwargs`: дополнительные именованные аргументы.
+
+        Возвращает:
+            - `Response`: объект ответа с обновленными данными
+            элемента без соответствий.
+
+        Пример использования:
+            PATCH /no-matches/<id>/
+        """
+        instance = self.get_object()
+        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=HTTP_200_OK)
+
+    @swagger_auto_schema(auto_schema=None)
+    def update(self, request, *args, **kwargs):
+        """
+        Возвращает ошибку метода не разрешен (HTTP 405).
+
+        Этот метод будет скрыт в Swagger.
+
+        Возвращает:
+        - `Response`: объект ответа с ошибкой метода не разрешен.
+        """
+        return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class MatchViewSet(viewsets.ModelViewSet):
