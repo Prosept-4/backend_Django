@@ -1,17 +1,24 @@
 import json
-
+from datetime import datetime
+from rest_framework.mixins import UpdateModelMixin
 from django.db.models import Subquery, OuterRef
-from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK
-
+from rest_framework.status import (HTTP_200_OK, HTTP_201_CREATED,
+                                   HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST,
+                                   HTTP_404_NOT_FOUND,
+                                   HTTP_405_METHOD_NOT_ALLOWED)
+from drf_yasg.utils import swagger_auto_schema
 from api.v1.serializers import (DealerSerializer,
                                 DealerParsingSerializer,
                                 ProductSerializer,
-                                MatchSerializer)
+                                MatchSerializer,
+                                DealerParsingPostponeSerializer,
+                                DealerParsingNoMatchesSerializer)
 from backend.celery import make_predictions
+from core.pagination import CustomPagination
 from products.models import (Dealer, DealerParsing, Product, Match,
                              MatchingPredictions)
 
@@ -20,68 +27,396 @@ class AuthViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def logout(self, request):
-        response = JsonResponse({'detail': 'Вы разлогинились.'})
-
         # TODO: Добавить проверку авторизован ли пользователь
 
-        return response
+        return Response({'detail': 'Вы вышли из системы.'},
+                        status=HTTP_204_NO_CONTENT)
 
 
 class DealerViewSet(viewsets.ReadOnlyModelViewSet):
     """Вьюсет дилеров"""
     queryset = Dealer.objects.all()
     serializer_class = DealerSerializer
-    pagination_class = None
+    pagination_class = CustomPagination
 
 
 class DealerParsingViewSet(viewsets.ModelViewSet):
     """Вьюсет DealerParsing"""
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingSerializer
-    pagination_class = None
+    pagination_class = CustomPagination
 
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
-    """Вьюсет продукта заказчика"""
+    """Вьюсет предоставляющий список продуктов Prosept."""
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    pagination_class = None
+    pagination_class = CustomPagination
+
+
+class PostponeViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
+    """
+    ViewSet для работы с отложенными элементами DealerParsing.
+
+    Позволяет просматривать отложенные элементы и выполнять
+    частичное обновление.
+
+    Атрибуты класса:
+        - `queryset`: набор данных для запросов;
+        - `serializer_class`: класс сериализатора для преобразования данных;
+        - `pagination_class`: класс пагинации для разбивки
+        результатов на страницы.
+
+    Методы:
+        - `list`: возвращает список отложенных элементов
+        с применением пагинации;
+        - `retrieve`: возвращает детали отдельного отложенного элемента;
+        - `partial_update`: частично обновляет отложенный элемент;
+        - `update`: возвращает ошибку метода не разрешен (HTTP 405).
+
+    Атрибуты запроса:
+        - `request`: объект запроса;
+        - `args`: дополнительные аргументы;
+        - `kwargs`: дополнительные именованные аргументы.
+
+    Возвращает:
+        - `Response`: объект ответа с данными отложенных элементов
+    или ошибкой метода не разрешен.
+    """
+    queryset = DealerParsing.objects.all()
+    serializer_class = DealerParsingPostponeSerializer
+    pagination_class = CustomPagination
+
+    def list(self, request, *args, **kwargs):
+        """
+        Возвращает список отложенных элементов с применением пагинации.
+
+        Аргументы:
+            - `request`: объект запроса;
+            - `args`: дополнительные аргументы;
+            - `kwargs`: дополнительные именованные аргументы.
+
+        Возвращает:
+        - `Response`: объект ответа с данными отложенных
+        элементов и метаданными пагинации.
+
+        Пример использования:
+            GET /api/postpone/
+        """
+        queryset = DealerParsing.objects.filter(is_postponed=True)
+        page = self.paginate_queryset(queryset)
+        serializer = self.serializer_class(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Возвращает детали отдельного отложенного элемента.
+
+        Аргументы:
+            - `request`: объект запроса;
+            - `args`: дополнительные аргументы;
+            - `kwargs`: дополнительные именованные аргументы.
+
+        Возвращает:
+            - `Response`: объект ответа с данными отдельного
+            отложенного элемента.
+
+        Пример использования:
+            GET /postpone/<id>/
+        """
+        instance = self.get_object()
+        serializer = self.serializer_class(instance)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Частично обновляет отложенный элемент.
+
+        Аргументы:
+            - `request`: объект запроса;
+            - `args`: дополнительные аргументы;
+            - `kwargs`: дополнительные именованные аргументы.
+
+        Возвращает:
+            - `Response`: объект ответа с обновленными данными отложенного элемента.
+
+        Пример использования:
+            PATCH /postpone/<id>/
+        """
+        instance = self.get_object()
+        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=HTTP_200_OK)
+
+    @swagger_auto_schema(auto_schema=None)
+    def update(self, request, *args, **kwargs):
+        """
+        Возвращает ошибку метода не разрешен (HTTP 405).
+
+        Этот метод будет скрыт в Swagger.
+
+        Возвращает:
+        - `Response`: объект ответа с ошибкой метода не разрешен.
+        """
+        return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
+    """
+    ViewSet для работы с элементами DealerParsing, у которых
+    нет соответствий.
+
+    Позволяет просматривать элементы без соответствий и
+    выполнять частичное обновление.
+
+    Атрибуты класса:
+    - `queryset`: набор данных для запросов;
+    - `serializer_class`: класс сериализатора для преобразования данных;
+    - `pagination_class`: класс пагинации для разбивки
+    результатов на страницы.
+
+    Методы:
+    - `list`: возвращает список элементов без соответствий
+    с применением пагинации;
+    - `retrieve`: возвращает детали отдельного элемента без соответствий;
+    - `partial_update`: частично обновляет элемент без соответствий;
+    - `update`: возвращает ошибку метода не разрешен (HTTP 405).
+
+    Атрибуты запроса:
+    - `request`: объект запроса;
+    - `args`: дополнительные аргументы;
+    - `kwargs`: дополнительные именованные аргументы.
+
+    Возвращает:
+    - `Response`: объект ответа с данными элементов без
+    соответствий или ошибкой запрещённого метода PUT.
+    """
+    queryset = DealerParsing.objects.all()
+    serializer_class = DealerParsingNoMatchesSerializer
+    pagination_class = CustomPagination
+
+    def list(self, request, *args, **kwargs):
+        """
+        Возвращает список элементов без соответствий с применением пагинации.
+
+        Аргументы:
+            - `request`: объект запроса;
+            - `args`: дополнительные аргументы;
+            - `kwargs`: дополнительные именованные аргументы.
+
+        Возвращает:
+            - `Response`: объект ответа с данными элементов без
+            соответствий и метаданными пагинации.
+
+        Пример использования:
+            GET /no-matches/
+        """
+        queryset = DealerParsing.objects.filter(has_no_matches=True)
+        page = self.paginate_queryset(queryset)
+        serializer = self.serializer_class(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Возвращает детали отдельного элемента без соответствий.
+
+        Аргументы:
+            - `request`: объект запроса;
+            - `args`: дополнительные аргументы;
+            - `kwargs`: дополнительные именованные аргументы.
+
+        Возвращает:
+            - `Response`: объект ответа с данными отдельного
+            элемента без соответствий.
+
+        Пример использования:
+            GET /no-matches/<id>/
+        """
+        instance = self.get_object()
+        serializer = self.serializer_class(instance)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Частично обновляет элемент без соответствий.
+
+        Аргументы:
+            - `request`: объект запроса;
+            - `args`: дополнительные аргументы;
+            - `kwargs`: дополнительные именованные аргументы.
+
+        Возвращает:
+            - `Response`: объект ответа с обновленными данными
+            элемента без соответствий.
+
+        Пример использования:
+            PATCH /no-matches/<id>/
+        """
+        instance = self.get_object()
+        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=HTTP_200_OK)
+
+    @swagger_auto_schema(auto_schema=None)
+    def update(self, request, *args, **kwargs):
+        """
+        Возвращает ошибку метода не разрешен (HTTP 405).
+
+        Этот метод будет скрыт в Swagger.
+
+        Возвращает:
+        - `Response`: объект ответа с ошибкой метода не разрешен.
+        """
+        return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class MatchViewSet(viewsets.ModelViewSet):
-    """Вьюсет мэтча"""
-    queryset = Match.objects.all()
+    """
+    Вьюсет для работы с мэтчами.
+
+    Позволяет создавать, частично обновлять и удалять мэтчи.
+
+    Attributes:
+        queryset (QuerySet): Запрос для получения всех объектов Match.
+        serializer_class (Type[MatchSerializer]): Класс сериализатора Match.
+        pagination_class (None): Класс пагинации (не используется).
+
+    Methods:
+        create(self, request, *args, **kwargs): Создает новый мэтч, связывая
+            объекты DealerParsing, Dealer и Product. Проверяет уникальность
+            создаваемого мэтча.
+        partial_update(self, request, *args, **kwargs): Частично обновляет
+            данные мэтча, включая изменение даты в поле matching_date.
+        destroy(self, request, *args, **kwargs): Удаляет мэтч, устанавливая
+            is_matched в False и убирая дату из поля matching_date.
+
+    Raises:
+        HTTP_404_NOT_FOUND: Если объект мэтча не найден.
+    """
+    queryset = Match.objects.all().order_by('key')
     serializer_class = MatchSerializer
-    pagination_class = None
+    pagination_class = CustomPagination
 
-    def post(self):
-        # Проверяем есть ли запись мэтча в таблице.
-        # Если записи нет - создаём мэтч.
-        # В DealerParsing меняем is_matched на True и добавляем дату в
-        # Поле matching_date.
-        pass
+    # TODO: Описать GET запрос, в котором будут выводиться дополнительные поля.
 
-    def patch(self):
-        # При PATCH запросе проверяем есть ли запись мэтча в таблице.
-        # Если запись есть — у текущей записи меняем в DealerParsing поле
-        # is_matched на False и убираем дату из поля matching_date.
-        # После этого меняем связь на новую. Далее по аналогии.
-        # Для новой связи в DealerParsing меняем is_matched на
-        # True и добавляем дату в поле matching_date.
-        pass
+    def create(self, request, *args, **kwargs):
+        """
+        Создает новый мэтч, связывая объекты DealerParsing, Dealer и Product.
+        Проверяет уникальность создаваемого мэтча.
 
-    def delete(self):
-        # При delete запросе проверяем есть ли запись мэтча в таблице.
-        # Если запись есть — сначала в DealerParsing меняем is_matched на
-        # False и удаляем дату из поля matching_date.
-        # После этого удаляем сам мэтч из таблицы.
-        pass
+        Args:
+            request (Request): Объект запроса.
+            *args: Позиционные аргументы.
+            **kwargs: Ключевые аргументы.
+
+        Returns:
+            Response: Ответ с результатом создания мэтча.
+
+        Raises:
+            HTTP_400_BAD_REQUEST: Если мэтч с такими параметрами
+            уже существует.
+            HTTP_201_CREATED: Если мэтч успешно создан.
+        """
+        key = request.data.get("key")
+        dealer_id = request.data.get("dealer_id")
+        product_id = request.data.get("product_id")
+
+        # Получаем объект DealerParsing по артикулу продукта.
+        dealer_parsing_instance = get_object_or_404(DealerParsing,
+                                                    product_key=key)
+        dealer_id_instance = get_object_or_404(Dealer, id=dealer_id)
+        product_id_instance = get_object_or_404(Product, id=product_id)
+
+        # Проверяем, не существует ли уже такого мэтча.
+        existing_match = Match.objects.filter(key=dealer_parsing_instance,
+                                              dealer_id=dealer_id_instance,
+                                              product_id=product_id_instance).first()
+
+        if existing_match:
+            return Response({'detail': 'Соответствие уже существует.'},
+                            status=HTTP_400_BAD_REQUEST)
+
+        # Создаем новый мэтч
+        Match.objects.create(
+            key=dealer_parsing_instance,
+            dealer_id=dealer_id_instance,
+            product_id=product_id_instance
+        )
+
+        dealer_parsing_instance = DealerParsing.objects.get(product_key=key)
+        dealer_parsing_instance.is_matched = True
+        dealer_parsing_instance.matching_date = datetime.now().strftime(
+            "%Y-%m-%d")
+        dealer_parsing_instance.save()
+
+        return Response({'detail': 'Связь успешно установлена.'},
+                        status=HTTP_201_CREATED)
+
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Частично обновляет данные мэтча, включая изменение
+        даты в поле matching_date.
+
+        Args:
+            request (Request): Объект запроса.
+            *args: Позиционные аргументы.
+            **kwargs: Ключевые аргументы.
+
+        Returns:
+            Response: Ответ с результатом частичного обновления мэтча.
+        """
+        partial = kwargs.pop('partial', True)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data,
+                                         partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+def destroy(self, request, *args, **kwargs):
+    """
+    Удаляет мэтч, устанавливая is_matched в False и убирая дату
+    из поля matching_date.
+
+    Args:
+        request (Request): Объект запроса.
+        *args: Позиционные аргументы.
+        **kwargs: Ключевые аргументы.
+
+    Returns:
+        Response: Ответ с результатом удаления мэтча.
+
+    Raises:
+        HTTP_404_NOT_FOUND: Если объект мэтча не найден.
+        HTTP_204_NO_CONTENT: Если мэтч успешно удалён.
+    """
+    try:
+        instance = self.get_object()
+    except Exception as error:
+        return Response(
+            {"detail": "Нет совпадений соответствующих данному запросу"},
+            status=HTTP_404_NOT_FOUND
+        )
+
+    # Установка is_matched в False и удаление даты.
+    instance.key.is_matched = False
+    instance.key.matching_date = None
+    instance.key.save()
+
+    # Удаление самого мэтча.
+    instance.delete()
+
+    return Response({"detail": f"{instance}"}, status=HTTP_204_NO_CONTENT)
+
 
 class MatchingPredictionsViewSet(viewsets.ModelViewSet):
     """Вьюсет мэтч предикшнов"""
     queryset = MatchingPredictions.objects.all()
     serializer_class = MatchSerializer
-    pagination_class = None
+    pagination_class = CustomPagination
 
 
 class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
