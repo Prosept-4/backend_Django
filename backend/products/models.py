@@ -92,8 +92,6 @@ class DealerParsing(models.Model):
     is_matched = models.BooleanField(
         verbose_name='Связь установлена',
         default=False,
-        blank=True,
-        null=True,
     )
     matching_date = models.DateField(
         verbose_name='Дата связывания',

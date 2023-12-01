@@ -5,7 +5,7 @@ from rest_framework_simplejwt.views import (TokenObtainPairView,
                                             TokenVerifyView)
 
 from api.v1.views import AuthViewSet, AnalysisViewSet, PostponeViewSet, \
-    NoMatchesViewSet
+    NoMatchesViewSet, MatchingPredictionsViewSet
 from users.views import CustomUserViewSet
 from api.v1.views import (DealerViewSet,
                           DealerParsingViewSet,
@@ -14,14 +14,15 @@ from api.v1.views import (DealerViewSet,
 
 router = DefaultRouter()
 
-router.register(r'users', CustomUserViewSet)
 router.register(r'auth', AuthViewSet, basename='auth')
 router.register(r'dealer', DealerViewSet)
 router.register(r'dealer-products', DealerParsingViewSet)
-router.register(r'product', ProductViewSet)
-router.register(r'match', MatchViewSet)
-router.register(r'postpone', PostponeViewSet, basename='postpone')
 router.register(r'has_no_matches', NoMatchesViewSet, basename='has_no_matches')
+router.register(r'match', MatchViewSet)
+router.register(r'users', CustomUserViewSet)
+router.register(r'postpone', PostponeViewSet, basename='postpone')
+router.register(r'predictions', MatchingPredictionsViewSet, basename='predictions')
+router.register(r'product', ProductViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
