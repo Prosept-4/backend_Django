@@ -1,5 +1,9 @@
 from django.db import models
 
+from core.constants.products import (BIG_INT_VALUE,
+                                     EAN_13_INT_VALUE,
+                                     SMALL_INT_VALUE)
+
 
 class Dealer(models.Model):
     """
@@ -17,7 +21,7 @@ class Dealer(models.Model):
     """
     name = models.CharField(
         verbose_name='Название',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
     )
 
     class Meta:
@@ -47,7 +51,11 @@ class DealerParsing(models.Model):
         dealer_id (Dealer): Связь с моделью Dealer, внешний ключ для
         связи с дилером.
         is_matched (bool): Флаг, указывающий на наличие соответствия.
+        matching_date (datetime): Дата установления соответствия.
+        is_postponed (bool): Флаг отложенного соответствия.
+        postpone_date (datetime): Дата отложенного соответствия.
         has_no_matches (bool): Флаг, указывающий на отсутствие соответствий.
+        has_no_matches_toggle_date (datetime): Дата отсутствия соответствия.
 
     Meta:
         verbose_name (str): Отображаемое имя в админке для одного объекта.
@@ -56,23 +64,23 @@ class DealerParsing(models.Model):
     """
     product_key = models.CharField(
         verbose_name='Артикул товара',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
         unique=True,
     )
     price = models.CharField(
         verbose_name='Цена',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
     )
     product_url = models.URLField(
         verbose_name='Адрес страницы, откуда собранны данные',
-        max_length=2560,
+        max_length=SMALL_INT_VALUE,
     )
     product_name = models.CharField(
         verbose_name='Заголовок продаваемого товара',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
     )
     date = models.DateField(
-        verbose_name='Дата получения информации'
+        verbose_name='Дата получения информации',
     )
     dealer_id = models.ForeignKey(
         Dealer,
@@ -82,14 +90,27 @@ class DealerParsing(models.Model):
         on_delete=models.CASCADE,
     )
     is_matched = models.BooleanField(
+        verbose_name='Связь установлена',
         default=False,
+        blank=True,
+        null=True,
     )
     matching_date = models.DateField(
         verbose_name='Дата связывания',
         null=True,
-        blank=True
+        blank=True,
+    )
+    is_postponed = models.BooleanField(
+        verbose_name='Отложено',
+        default=False,
+    )
+    postpone_date = models.DateField(
+        verbose_name='Дата пометки "Отложено"',
+        null=True,
+        blank=True,
     )
     has_no_matches = models.BooleanField(
+        verbose_name='Нет совпадений',
         default=False,
     )
     has_no_matches_toggle_date = models.DateField(
@@ -134,60 +155,80 @@ class Product(models.Model):
     """
     id_product = models.CharField(
         verbose_name='ID товара',
-        max_length=256,
+        max_length=BIG_INT_VALUE,
         unique=True,
     )
     article = models.CharField(
         verbose_name='Артикул товара',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
     )
     ean_13 = models.CharField(
         verbose_name='Код товара',
-        max_length=15,
+        max_length=EAN_13_INT_VALUE,
+        blank=True,
+        null=True,
     )
     name = models.CharField(
         verbose_name='Название товара',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
     )
     cost = models.CharField(
         verbose_name='Стоимость',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
+        blank=True,
+        null=True,
     )
     recommended_price = models.CharField(
         verbose_name='Рекомендованная цена',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
+        blank=True,
+        null=True,
     )
     category_id = models.CharField(
         verbose_name='Категория товара',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
+        blank=True,
+        null=True,
     )
     ozon_name = models.CharField(
         verbose_name='Название товара на Озоне',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
+        blank=True,
+        null=True,
     )
     name_1c = models.CharField(
         verbose_name='Название товара в 1С',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
     )
     wb_name = models.CharField(
         verbose_name='Название товара на WB',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
+        blank=True,
+        null=True,
     )
     ozon_article = models.CharField(
         verbose_name='Артикул для Озон',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
+        blank=True,
+        null=True,
     )
     wb_article = models.CharField(
         verbose_name='Артикул для WB',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
+        blank=True,
+        null=True,
     )
     ym_article = models.CharField(
         verbose_name='Артикул для Яндекс.Маркета',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
+        blank=True,
+        null=True,
     )
     wb_article_td = models.CharField(
         verbose_name='Артикул_ВБ_тд',
-        max_length=256,
+        max_length=SMALL_INT_VALUE,
+        blank=True,
+        null=True,
     )
 
     class Meta:
@@ -224,18 +265,18 @@ class Match(models.Model):
         to_field='product_key',
         on_delete=models.CASCADE,
     )
-    product_id = models.ForeignKey(
-        Product,
-        verbose_name='Продукт Prosept',
-        related_name='matches',
-        to_field='id_product',
-        on_delete=models.CASCADE,
-    )
     dealer_id = models.ForeignKey(
         Dealer,
         verbose_name='Дилер',
         related_name='matches',
         to_field='id',
+        on_delete=models.CASCADE,
+    )
+    product_id = models.ForeignKey(
+        Product,
+        verbose_name='Продукт Prosept',
+        related_name='matches',
+        to_field='id_product',
         on_delete=models.CASCADE,
     )
 
