@@ -16,7 +16,8 @@ from api.v1.serializers import (DealerSerializer,
                                 ProductSerializer,
                                 MatchSerializer,
                                 DealerParsingPostponeSerializer,
-                                DealerParsingNoMatchesSerializer)
+                                DealerParsingNoMatchesSerializer,
+                                MatchingPredictionsSerializer)
 from backend.celery import make_predictions
 from core.pagination import CustomPagination
 from products.models import (Dealer, DealerParsing, Product, Match,
@@ -412,11 +413,54 @@ def destroy(self, request, *args, **kwargs):
     return Response({"detail": f"{instance}"}, status=HTTP_204_NO_CONTENT)
 
 
-class MatchingPredictionsViewSet(viewsets.ModelViewSet):
-    """Вьюсет мэтч предикшнов"""
+class MatchingPredictionsViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Вьюсет для работы с предсказаниями соответствия продуктов.
+
+    Позволяет просматривать только актуальные предсказания, которые не имеют
+        установленной связи (is_matched=False).
+
+    Attributes:
+        queryset (QuerySet): Запрос для получения всех
+            объектов MatchingPredictions.
+        serializer_class (Type[MatchingPredictionsSerializer]): Класс
+            сериализатора MatchingPredictions.
+        pagination_class (CustomPagination): Класс пагинации.
+    """
     queryset = MatchingPredictions.objects.all()
-    serializer_class = MatchSerializer
+    serializer_class = MatchingPredictionsSerializer
     pagination_class = CustomPagination
+
+    # Нужно сделать выдачу только актуальных данных. Только для тех товаров
+    # Дилера, которые помечены как is_matched=False.
+    # Только чтение данных.
+
+    # Показать товары, по dealer_id, фильтруя по is_matched=False.
+    # Дополнительно вывести в ответе поля dealer_name, dealer_article,
+    # dealer_url, prosept_name_1c, prosept_article,
+
+    # TODO: Подумать нужна ли здесь пагинация. Пока не очень понятно.
+
+    def list(self, request, *args, **kwargs):
+        """
+        Получает список актуальных предсказаний, отфильтрованных
+            по позициям, у которых ещё не задана связь. Выводит в ответе API
+            дополнительные поля для лучшего восприятия.
+
+        Args:
+            request (Request): Объект запроса.
+            *args: Позиционные аргументы.
+            **kwargs: Ключевые аргументы.
+
+        Returns:
+            Response: Ответ с данными актуальных предсказаний.
+        """
+        queryset = MatchingPredictions.objects.filter(
+            dealer_product_id__in=DealerParsing.objects.filter(
+                is_matched=False, has_no_matches=False).values('id'))
+        page = self.paginate_queryset(queryset)
+        serializer = self.serializer_class(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
