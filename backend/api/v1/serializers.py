@@ -2,8 +2,8 @@ from datetime import datetime
 
 from rest_framework import serializers
 
-from products.models import Dealer, DealerParsing, Product, Match, \
-    MatchingPredictions
+from products.models import (Dealer, DealerParsing, Product,
+                             Match, MatchingPredictions)
 
 
 class DealerSerializer(serializers.ModelSerializer):
@@ -211,6 +211,23 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class MatchSerializer(serializers.ModelSerializer):
     """Сериализатор отображения списка мэтчей"""
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Получаем связанный объект DealerParsing
+        dealer_parsing = instance.key
+        prosept_product = instance.product_id
+
+        # Добавляем необходимые поля из связанного объекта DealerParsing и Dealer
+        representation['dealer_name'] = dealer_parsing.dealer_id.name
+        representation['dealer_product_name'] = dealer_parsing.product_name
+        representation['dealer_product_key'] = dealer_parsing.product_key
+        representation['dealer_product_url'] = dealer_parsing.product_url
+        representation['prosept_name_1c'] = prosept_product.name_1c
+        representation['prosept_name'] = prosept_product.name
+        representation['prosept_article'] = prosept_product.article
+
+        return representation
 
     class Meta:
         model = Match

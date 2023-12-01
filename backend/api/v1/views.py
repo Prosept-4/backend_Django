@@ -1,16 +1,19 @@
 import json
 from datetime import datetime
-from rest_framework.mixins import UpdateModelMixin
+
+from django.core.serializers import serialize
 from django.db.models import Subquery, OuterRef
 from django.shortcuts import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.mixins import UpdateModelMixin
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_200_OK, HTTP_201_CREATED,
                                    HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST,
                                    HTTP_404_NOT_FOUND,
                                    HTTP_405_METHOD_NOT_ALLOWED)
-from drf_yasg.utils import swagger_auto_schema
+
 from api.v1.serializers import (DealerSerializer,
                                 DealerParsingSerializer,
                                 ProductSerializer,
@@ -18,7 +21,7 @@ from api.v1.serializers import (DealerSerializer,
                                 DealerParsingPostponeSerializer,
                                 DealerParsingNoMatchesSerializer,
                                 MatchingPredictionsSerializer)
-from backend.celery import make_predictions
+from api.v1.tasks import make_predictions
 from core.pagination import CustomPagination
 from products.models import (Dealer, DealerParsing, Product, Match,
                              MatchingPredictions)
@@ -145,7 +148,8 @@ class PostponeViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
             PATCH /postpone/<id>/
         """
         instance = self.get_object()
-        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer = self.serializer_class(instance, data=request.data,
+                                           partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=HTTP_200_OK)
@@ -255,7 +259,8 @@ class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
             PATCH /no-matches/<id>/
         """
         instance = self.get_object()
-        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer = self.serializer_class(instance, data=request.data,
+                                           partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=HTTP_200_OK)
@@ -463,10 +468,10 @@ class MatchingPredictionsViewSet(viewsets.ReadOnlyModelViewSet):
         return self.get_paginated_response(serializer.data)
 
 
-class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
+class AnalysisViewSet(viewsets.ViewSet):
     queryset = None
-    serializer_class = DealerParsingSerializer
 
+    @action(detail=False, methods=['get'])
     def analyze(self, request, *args, **kwargs):
         existing_predictions_subquery = MatchingPredictions.objects.filter(
             dealer_product_id=OuterRef('pk')
@@ -475,17 +480,15 @@ class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
         # Получаем все записи DealerParsing с is_matched=False и которых
         # нет в MatchingPredictions
         # TODO: ЭТО ПОЙДЁТ НА АНАЛИЗ. QUERYSET
-        #  ТОВАРОВ ДИЛЕРОВ КОТОРЫХ НЕТ В ПРЕДИКШНАХ.
+        #  ТОВАРОВ ДИЛЕРОВ КОТОРЫХ НЕТ В ПРЕДИКШНАХ И КОТОРЫЕ НЕ СМЭТЧЕНЫ.
         dealer_parsing_entries = DealerParsing.objects.filter(
             is_matched=False
         ).exclude(
             pk__in=Subquery(existing_predictions_subquery)
         )
-        serializer = self.get_serializer(dealer_parsing_entries, many=True)
+        serializer = DealerParsingSerializer(dealer_parsing_entries, many=True)
 
-        from django.core.serializers import serialize
-
-        # Достаём данные о продуктах Просепт и дилерах.
+        # Достаём данные о продуктах Просепт и дилеров.
         # Так же по просьбе DS достаём данные о соответствиях.
 
         prosept_products_queryset = Product.objects.all()
@@ -499,7 +502,6 @@ class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
 
         json_dealer_data = json.dumps(serializer.data)
         json_prosept_products = json.loads(serialized_prosept_products)
-        json_dealers = json.loads(serialized_dealers)
         json_matches = json.loads(serialized_matches)
 
         # Проверим заведён ли у пользователя Telegram ID.
@@ -519,12 +521,7 @@ class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Запускаем задачу в фоновом режиме.
         # Здесь передаём данные в celery, а после в ML модель.
-        make_predictions.delay(make_predictions,
-                               json_dealer_data,
-                               json_prosept_products,
-                               json_dealers,
-                               json_matches,
-                               chat_id)
+        make_predictions.delay(json_dealer_data, chat_id)
 
         return Response(
             {'detail': f'Данные успешно переданы '

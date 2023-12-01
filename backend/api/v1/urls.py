@@ -14,6 +14,7 @@ from api.v1.views import (DealerViewSet,
 
 router = DefaultRouter()
 
+router.register(r'', AnalysisViewSet, basename='analyze')
 router.register(r'auth', AuthViewSet, basename='auth')
 router.register(r'dealer', DealerViewSet)
 router.register(r'dealer-products', DealerParsingViewSet)
@@ -29,7 +30,6 @@ urlpatterns = [
     path('auth/login/', TokenObtainPairView.as_view(),
          name='login'),
     path('auth/logout/', AuthViewSet, name='logout'),
-    path('analyze/', AnalysisViewSet.as_view({'get': 'analyze'}), name='analyze'),
     path('auth/token/refresh/', TokenRefreshView.as_view(),
          name='token_refresh'),
     path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
