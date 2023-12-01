@@ -5,7 +5,7 @@ from celery import Celery
 from telegram import Bot
 
 from core.environment import BOT_TOKEN
-
+# from products.models import MatchingPredictions
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +44,12 @@ def make_predictions(dealer_data,
                      chat_id=None):
     try:
         # TODO: Сюда ставим вызов ML модели, передаём в неё массив для анализа.
+
         # ml_results = start_ml(dealer_data,
         #                       prosept_products,
         #                       dealers,
         #                       matches)
+
 
         # Обработка результатов ML и создание записей в БД
         # for dealer_product_id, prosept_product_ids in ml_results.items():
