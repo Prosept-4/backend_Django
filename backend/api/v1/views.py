@@ -33,7 +33,8 @@ from products.models import (Dealer, DealerParsing, Product, Match,
 from api.v1.filters import (DealerParsingFilter,
                             DealerParsingIsMatchedFilter,
                             DealerParsingIsPostponedFilter,
-                            DealerParsingHasNoMatchesFilter)
+                            DealerParsingHasNoMatchesFilter,
+                            PredictionsFilter)
 
 
 @extend_schema_view(**LOGOUT_SCHEMA)
@@ -327,7 +328,7 @@ class MatchViewSet(viewsets.ModelViewSet):
     Raises:
         HTTP_404_NOT_FOUND: Если объект мэтча не найден.
     """
-    queryset = Match.objects.all().order_by('key')
+    queryset = Match.objects.all().order_by('-key__matching_date')
     serializer_class = MatchSerializer
     pagination_class = CustomPagination
 
@@ -467,40 +468,11 @@ class MatchingPredictionsViewSet(viewsets.ReadOnlyModelViewSet):
             сериализатора MatchingPredictions.
         pagination_class (CustomPagination): Класс пагинации.
     """
-    queryset = MatchingPredictions.objects.all()
+    queryset = MatchingPredictions.objects.all().order_by('-id')
     serializer_class = MatchingPredictionsSerializer
     pagination_class = CustomPagination
-
-    # Нужно сделать выдачу только актуальных данных. Только для тех товаров
-    # Дилера, которые помечены как is_matched=False.
-    # Только чтение данных.
-
-    # Показать товары, по dealer_id, фильтруя по is_matched=False.
-    # Дополнительно вывести в ответе поля dealer_name, dealer_article,
-    # dealer_url, prosept_name_1c, prosept_article,
-
-    # TODO: Подумать нужна ли здесь пагинация. Пока не очень понятно.
-
-    def list(self, request, *args, **kwargs):
-        """
-        Получает список актуальных предсказаний, отфильтрованных
-            по позициям, у которых ещё не задана связь. Выводит в ответе API
-            дополнительные поля для лучшего восприятия.
-
-        Args:
-            request (Request): Объект запроса.
-            *args: Позиционные аргументы.
-            **kwargs: Ключевые аргументы.
-
-        Returns:
-            Response: Ответ с данными актуальных предсказаний.
-        """
-        queryset = MatchingPredictions.objects.filter(
-            dealer_product_id__in=DealerParsing.objects.filter(
-                is_matched=False, has_no_matches=False).values('id'))
-        page = self.paginate_queryset(queryset)
-        serializer = self.serializer_class(page, many=True)
-        return self.get_paginated_response(serializer.data)
+    filter_backends = [DjangoFilterBackend,]
+    filterset_class = PredictionsFilter
 
 
 @extend_schema_view(**ANALYSIS_SCHEMA)
