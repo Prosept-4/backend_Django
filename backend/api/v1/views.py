@@ -4,6 +4,7 @@ from datetime import datetime
 from django.core.serializers import serialize
 from django.db.models import Subquery, OuterRef
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -29,6 +30,10 @@ from api.v1.tasks import make_predictions
 from core.pagination import CustomPagination
 from products.models import (Dealer, DealerParsing, Product, Match,
                              MatchingPredictions)
+from .filters import (DealerParsingFilter,
+                      DealerParsingIsMatchedFilter,
+                      DealerParsingIsPostponedFilter,
+                      DealerParsingHasNoMatchesFilter)
 
 
 @extend_schema_view(**LOGOUT_SCHEMA)
@@ -57,6 +62,8 @@ class DealerParsingViewSet(viewsets.ModelViewSet):
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingSerializer
     pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend,]
+    filterset_class = DealerParsingFilter
 
     def update(self, request, *args, **kwargs):
         """
@@ -557,3 +564,13 @@ class AnalysisViewSet(viewsets.ViewSet):
                        f'в ML модель. ' + error_message},
             status=HTTP_200_OK
         )
+
+
+class StatisticViewSet(viewsets.ReadOnlyModelViewSet):
+    """Сбор статистики парсинга дилеров"""
+    queryset = DealerParsing.objects.all()
+    serializer_class = DealerParsingSerializer
+    filter_backends = [DjangoFilterBackend,]
+    filterset_class = DealerParsingIsMatchedFilter
+    # Пока ничего не получилось.
+    

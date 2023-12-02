@@ -27,6 +27,7 @@ class Dealer(models.Model):
     class Meta:
         verbose_name = 'Дилер'
         verbose_name_plural = 'Дилеры'
+        ordering = ('-id',)
         constraints = [
             models.UniqueConstraint(
                 fields=['name'],
@@ -120,6 +121,7 @@ class DealerParsing(models.Model):
     class Meta:
         verbose_name = 'Товар дилера'
         verbose_name_plural = 'Товары дилеров'
+        ordering = ('-date',)
 
     def __str__(self) -> str:
         return self.product_name
@@ -232,6 +234,7 @@ class Product(models.Model):
     class Meta:
         verbose_name = 'Продукт Prosept'
         verbose_name_plural = 'Продукты Prosept'
+        ordering = ('-id',)
 
     def __str__(self) -> str:
         return self.name
@@ -281,6 +284,7 @@ class Match(models.Model):
     class Meta:
         verbose_name = 'Связанный товар'
         verbose_name_plural = 'Связанные товары'
+        ordering = ('-id',)
         unique_together = ('key', 'product_id', 'dealer_id')
 
     def __str__(self) -> str:
