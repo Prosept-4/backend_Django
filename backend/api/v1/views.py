@@ -4,8 +4,7 @@ from datetime import datetime
 from django.core.serializers import serialize
 from django.db.models import Subquery, OuterRef
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema, extend_schema_view
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.mixins import UpdateModelMixin
@@ -51,12 +50,22 @@ class DealerViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = CustomPagination
 
 
-@extend_schema_view(**DEALER_PARSING_SCHEMA)
+@extend_schema_view(**DEALER_PARSING_SCHEMA,
+                    update=extend_schema(exclude=True))
 class DealerParsingViewSet(viewsets.ModelViewSet):
     """Вьюсет DealerParsing"""
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingSerializer
     pagination_class = CustomPagination
+
+    def update(self, request, *args, **kwargs):
+        """
+        Возвращает ошибку метода не разрешен (HTTP 405).
+
+        Возвращает:
+        - `Response`: объект ответа с ошибкой метода не разрешен.
+        """
+        return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @extend_schema_view(**PRODUCT_SCHEMA)
@@ -67,7 +76,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = CustomPagination
 
 
-@extend_schema_view(**POSTPONE_SCHEMA)
+@extend_schema_view(**POSTPONE_SCHEMA, update=extend_schema(exclude=True))
 class PostponeViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
     """
     ViewSet для работы с отложенными элементами DealerParsing.
@@ -164,7 +173,6 @@ class PostponeViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
         serializer.save()
         return Response(serializer.data, status=HTTP_200_OK)
 
-    @swagger_auto_schema(auto_schema=None)
     def update(self, request, *args, **kwargs):
         """
         Возвращает ошибку метода не разрешен (HTTP 405).
@@ -177,7 +185,7 @@ class PostponeViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
         return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
 
 
-@extend_schema_view(**NO_MATCHES_SCHEMA)
+@extend_schema_view(**NO_MATCHES_SCHEMA, update=extend_schema(exclude=True))
 class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
     """
     ViewSet для работы с элементами DealerParsing, у которых
@@ -276,7 +284,6 @@ class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
         serializer.save()
         return Response(serializer.data, status=HTTP_200_OK)
 
-    @swagger_auto_schema(auto_schema=None)
     def update(self, request, *args, **kwargs):
         """
         Возвращает ошибку метода не разрешен (HTTP 405).
@@ -289,7 +296,7 @@ class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
         return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
 
 
-@extend_schema_view(**MATCH_SCHEMA)
+@extend_schema_view(**MATCH_SCHEMA, update=extend_schema(exclude=True))
 class MatchViewSet(viewsets.ModelViewSet):
     """
     Вьюсет для работы с мэтчами.
@@ -427,6 +434,15 @@ class MatchViewSet(viewsets.ModelViewSet):
         instance.delete()
 
         return Response({"detail": f"{instance}"}, status=HTTP_204_NO_CONTENT)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Возвращает ошибку метода не разрешен (HTTP 405).
+
+        Возвращает:
+        - `Response`: объект ответа с ошибкой метода не разрешен.
+        """
+        return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @extend_schema_view(**MATCHING_PREDICTIONS_SCHEMA)

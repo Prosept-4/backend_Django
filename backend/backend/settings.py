@@ -177,7 +177,7 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'DESCRIPTION': 'Project from Team 4',
     'CONTACT': {
-        'name': 'Our repo',
+        'name': 'Project repo',
         'url': 'https://github.com/Prosept-4/',
         'email': '',
     },
