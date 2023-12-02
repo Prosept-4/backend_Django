@@ -118,6 +118,8 @@ class PostponeViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingPostponeSerializer
     pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend,]
+    filterset_class = DealerParsingIsPostponedFilter
 
     def list(self, request, *args, **kwargs):
         """
@@ -228,6 +230,8 @@ class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingNoMatchesSerializer
     pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend,]
+    filterset_class = DealerParsingHasNoMatchesFilter
 
     def list(self, request, *args, **kwargs):
         """
@@ -332,6 +336,8 @@ class MatchViewSet(viewsets.ModelViewSet):
     queryset = Match.objects.all().order_by('key')
     serializer_class = MatchSerializer
     pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = DealerParsingIsMatchedFilter
 
     # TODO: Описать GET запрос, в котором будут выводиться дополнительные поля.
 
