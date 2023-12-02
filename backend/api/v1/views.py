@@ -1,17 +1,24 @@
 import json
 from datetime import datetime
-from rest_framework.mixins import UpdateModelMixin
+
+from django.core.serializers import serialize
 from django.db.models import Subquery, OuterRef
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.mixins import UpdateModelMixin
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_200_OK, HTTP_201_CREATED,
                                    HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST,
                                    HTTP_404_NOT_FOUND,
                                    HTTP_405_METHOD_NOT_ALLOWED)
-from drf_yasg.utils import swagger_auto_schema
+
+from api.v1.schemas import (LOGOUT_SCHEMA, DEALER_SCHEMA,
+                            DEALER_PARSING_SCHEMA, PRODUCT_SCHEMA,
+                            POSTPONE_SCHEMA, NO_MATCHES_SCHEMA, MATCH_SCHEMA,
+                            ANALYSIS_SCHEMA, MATCHING_PREDICTIONS_SCHEMA)
 from api.v1.serializers import (DealerSerializer,
                                 DealerParsingSerializer,
                                 ProductSerializer,
@@ -19,7 +26,7 @@ from api.v1.serializers import (DealerSerializer,
                                 DealerParsingPostponeSerializer,
                                 DealerParsingNoMatchesSerializer,
                                 MatchingPredictionsSerializer)
-from backend.celery import make_predictions
+from api.v1.tasks import make_predictions
 from core.pagination import CustomPagination
 from products.models import (Dealer, DealerParsing, Product, Match,
                              MatchingPredictions)
@@ -29,6 +36,7 @@ from .filters import (DealerParsingFilter,
                       DealerParsingHasNoMatchesFilter)
 
 
+@extend_schema_view(**LOGOUT_SCHEMA)
 class AuthViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
@@ -39,6 +47,7 @@ class AuthViewSet(viewsets.ViewSet):
                         status=HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(**DEALER_SCHEMA)
 class DealerViewSet(viewsets.ReadOnlyModelViewSet):
     """Вьюсет дилеров"""
     queryset = Dealer.objects.all()
@@ -46,6 +55,8 @@ class DealerViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = CustomPagination
 
 
+@extend_schema_view(**DEALER_PARSING_SCHEMA,
+                    update=extend_schema(exclude=True))
 class DealerParsingViewSet(viewsets.ModelViewSet):
     """Вьюсет DealerParsing"""
     queryset = DealerParsing.objects.all()
@@ -54,7 +65,17 @@ class DealerParsingViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend,]
     filterset_class = DealerParsingFilter
 
+    def update(self, request, *args, **kwargs):
+        """
+        Возвращает ошибку метода не разрешен (HTTP 405).
 
+        Возвращает:
+        - `Response`: объект ответа с ошибкой метода не разрешен.
+        """
+        return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
+
+
+@extend_schema_view(**PRODUCT_SCHEMA)
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     """Вьюсет предоставляющий список продуктов Prosept."""
     queryset = Product.objects.all()
@@ -62,6 +83,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = CustomPagination
 
 
+@extend_schema_view(**POSTPONE_SCHEMA, update=extend_schema(exclude=True))
 class PostponeViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
     """
     ViewSet для работы с отложенными элементами DealerParsing.
@@ -152,12 +174,12 @@ class PostponeViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
             PATCH /postpone/<id>/
         """
         instance = self.get_object()
-        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer = self.serializer_class(instance, data=request.data,
+                                           partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=HTTP_200_OK)
 
-    @swagger_auto_schema(auto_schema=None)
     def update(self, request, *args, **kwargs):
         """
         Возвращает ошибку метода не разрешен (HTTP 405).
@@ -170,6 +192,7 @@ class PostponeViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
         return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
 
 
+@extend_schema_view(**NO_MATCHES_SCHEMA, update=extend_schema(exclude=True))
 class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
     """
     ViewSet для работы с элементами DealerParsing, у которых
@@ -262,12 +285,12 @@ class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
             PATCH /no-matches/<id>/
         """
         instance = self.get_object()
-        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer = self.serializer_class(instance, data=request.data,
+                                           partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=HTTP_200_OK)
 
-    @swagger_auto_schema(auto_schema=None)
     def update(self, request, *args, **kwargs):
         """
         Возвращает ошибку метода не разрешен (HTTP 405).
@@ -280,6 +303,7 @@ class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
         return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
 
 
+@extend_schema_view(**MATCH_SCHEMA, update=extend_schema(exclude=True))
 class MatchViewSet(viewsets.ModelViewSet):
     """
     Вьюсет для работы с мэтчами.
@@ -383,43 +407,52 @@ class MatchViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data)
 
+    def destroy(self, request, *args, **kwargs):
+        """
+        Удаляет мэтч, устанавливая is_matched в False и убирая дату
+        из поля matching_date.
 
-def destroy(self, request, *args, **kwargs):
-    """
-    Удаляет мэтч, устанавливая is_matched в False и убирая дату
-    из поля matching_date.
+        Args:
+            request (Request): Объект запроса.
+            *args: Позиционные аргументы.
+            **kwargs: Ключевые аргументы.
 
-    Args:
-        request (Request): Объект запроса.
-        *args: Позиционные аргументы.
-        **kwargs: Ключевые аргументы.
+        Returns:
+            Response: Ответ с результатом удаления мэтча.
 
-    Returns:
-        Response: Ответ с результатом удаления мэтча.
+        Raises:
+            HTTP_404_NOT_FOUND: Если объект мэтча не найден.
+            HTTP_204_NO_CONTENT: Если мэтч успешно удалён.
+        """
+        try:
+            instance = self.get_object()
+        except Exception as error:
+            return Response(
+                {"detail": "Нет совпадений соответствующих данному запросу"},
+                status=HTTP_404_NOT_FOUND
+            )
 
-    Raises:
-        HTTP_404_NOT_FOUND: Если объект мэтча не найден.
-        HTTP_204_NO_CONTENT: Если мэтч успешно удалён.
-    """
-    try:
-        instance = self.get_object()
-    except Exception as error:
-        return Response(
-            {"detail": "Нет совпадений соответствующих данному запросу"},
-            status=HTTP_404_NOT_FOUND
-        )
+        # Установка is_matched в False и удаление даты.
+        instance.key.is_matched = False
+        instance.key.matching_date = None
+        instance.key.save()
 
-    # Установка is_matched в False и удаление даты.
-    instance.key.is_matched = False
-    instance.key.matching_date = None
-    instance.key.save()
+        # Удаление самого мэтча.
+        instance.delete()
 
-    # Удаление самого мэтча.
-    instance.delete()
+        return Response({"detail": f"{instance}"}, status=HTTP_204_NO_CONTENT)
 
-    return Response({"detail": f"{instance}"}, status=HTTP_204_NO_CONTENT)
+    def update(self, request, *args, **kwargs):
+        """
+        Возвращает ошибку метода не разрешен (HTTP 405).
+
+        Возвращает:
+        - `Response`: объект ответа с ошибкой метода не разрешен.
+        """
+        return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
 
 
+@extend_schema_view(**MATCHING_PREDICTIONS_SCHEMA)
 class MatchingPredictionsViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Вьюсет для работы с предсказаниями соответствия продуктов.
@@ -470,10 +503,11 @@ class MatchingPredictionsViewSet(viewsets.ReadOnlyModelViewSet):
         return self.get_paginated_response(serializer.data)
 
 
-class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
+@extend_schema_view(**ANALYSIS_SCHEMA)
+class AnalysisViewSet(viewsets.ViewSet):
     queryset = None
-    serializer_class = DealerParsingSerializer
 
+    @action(detail=False, methods=['get'])
     def analyze(self, request, *args, **kwargs):
         existing_predictions_subquery = MatchingPredictions.objects.filter(
             dealer_product_id=OuterRef('pk')
@@ -482,17 +516,15 @@ class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
         # Получаем все записи DealerParsing с is_matched=False и которых
         # нет в MatchingPredictions
         # TODO: ЭТО ПОЙДЁТ НА АНАЛИЗ. QUERYSET
-        #  ТОВАРОВ ДИЛЕРОВ КОТОРЫХ НЕТ В ПРЕДИКШНАХ.
+        #  ТОВАРОВ ДИЛЕРОВ КОТОРЫХ НЕТ В ПРЕДИКШНАХ И КОТОРЫЕ НЕ СМЭТЧЕНЫ.
         dealer_parsing_entries = DealerParsing.objects.filter(
             is_matched=False
         ).exclude(
             pk__in=Subquery(existing_predictions_subquery)
         )
-        serializer = self.get_serializer(dealer_parsing_entries, many=True)
+        serializer = DealerParsingSerializer(dealer_parsing_entries, many=True)
 
-        from django.core.serializers import serialize
-
-        # Достаём данные о продуктах Просепт и дилерах.
+        # Достаём данные о продуктах Просепт и дилеров.
         # Так же по просьбе DS достаём данные о соответствиях.
 
         prosept_products_queryset = Product.objects.all()
@@ -506,7 +538,6 @@ class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
 
         json_dealer_data = json.dumps(serializer.data)
         json_prosept_products = json.loads(serialized_prosept_products)
-        json_dealers = json.loads(serialized_dealers)
         json_matches = json.loads(serialized_matches)
 
         # Проверим заведён ли у пользователя Telegram ID.
@@ -526,12 +557,7 @@ class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Запускаем задачу в фоновом режиме.
         # Здесь передаём данные в celery, а после в ML модель.
-        make_predictions.delay(make_predictions,
-                               json_dealer_data,
-                               json_prosept_products,
-                               json_dealers,
-                               json_matches,
-                               chat_id)
+        make_predictions.delay(json_dealer_data, chat_id)
 
         return Response(
             {'detail': f'Данные успешно переданы '

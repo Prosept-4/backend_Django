@@ -6,6 +6,8 @@ echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 python manage.py makemigrations
 python manage.py migrate
+# Загружаем фикстуры для наполнения бд тестовыми данными.
+python manage.py loaddata static_data/fixtures/initial_data.json
 
 echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 echo @@@@@@@@@@@@@@@@@@@@@   collecting static  @@@@@@@@@@@@@@@@@@@@@@@@@@

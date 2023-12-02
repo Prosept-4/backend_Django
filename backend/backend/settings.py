@@ -46,8 +46,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'djoser',
-    'drf_yasg',
     'import_export',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
 ]
 
 MIDDLEWARE = [
@@ -146,6 +147,9 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
     ],
 }
 
@@ -174,12 +178,16 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
 
-SWAGGER_SETTINGS = {
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            "name": "Authorization",
-            "type": "apiKey",
-            "in": "header",
-        },
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Prosept hackathon project API',
+    'VERSION': '1.0.0',
+    'DESCRIPTION': 'Project from Team 4',
+    'CONTACT': {
+        'name': 'Project repo',
+        'url': 'https://github.com/Prosept-4/',
+        'email': 'info@prosept.ru',
     },
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'SORT_OPERATIONS': True,
 }
