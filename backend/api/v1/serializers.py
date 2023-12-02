@@ -211,6 +211,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class MatchSerializer(serializers.ModelSerializer):
     """Сериализатор отображения списка мэтчей"""
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
@@ -275,5 +276,3 @@ class MatchingPredictionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = MatchingPredictions
         fields = '__all__'
-
-
