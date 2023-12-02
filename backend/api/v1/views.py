@@ -23,7 +23,10 @@ from backend.celery import make_predictions
 from core.pagination import CustomPagination
 from products.models import (Dealer, DealerParsing, Product, Match,
                              MatchingPredictions)
-from .filters import DealerParsingFilter, DealerParsingStatisticFilter
+from .filters import (DealerParsingFilter,
+                      DealerParsingIsMatchedFilter,
+                      DealerParsingIsPostponedFilter,
+                      DealerParsingHasNoMatchesFilter)
 
 
 class AuthViewSet(viewsets.ViewSet):
@@ -48,7 +51,7 @@ class DealerParsingViewSet(viewsets.ModelViewSet):
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingSerializer
     pagination_class = CustomPagination
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = [DjangoFilterBackend,]
     filterset_class = DealerParsingFilter
 
 
@@ -541,7 +544,7 @@ class StatisticViewSet(viewsets.ReadOnlyModelViewSet):
     """Сбор статистики парсинга дилеров"""
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingSerializer
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = DealerParsingStatisticFilter
+    filter_backends = [DjangoFilterBackend,]
+    filterset_class = DealerParsingIsMatchedFilter
     # Пока ничего не получилось.
     
