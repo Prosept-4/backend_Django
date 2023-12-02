@@ -336,8 +336,8 @@ class MatchViewSet(viewsets.ModelViewSet):
     queryset = Match.objects.all().order_by('key')
     serializer_class = MatchSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = DealerParsingIsMatchedFilter
+    # filter_backends = [DjangoFilterBackend,]
+    # filterset_class = DealerParsingIsMatchedFilter
 
     # TODO: Описать GET запрос, в котором будут выводиться дополнительные поля.
 

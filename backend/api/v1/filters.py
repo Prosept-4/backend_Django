@@ -1,6 +1,6 @@
 import django_filters
 
-from products.models import DealerParsing
+from products.models import DealerParsing, Match
 
 
 class DealerParsingFilter(django_filters.FilterSet):
@@ -17,12 +17,13 @@ class DealerParsingFilter(django_filters.FilterSet):
 
 
 class DealerParsingIsMatchedFilter(django_filters.FilterSet):
-    min_date = django_filters.DateFilter(field_name='matching_date', lookup_expr='gte', required=False)
-    max_date = django_filters.DateFilter(field_name='matching_date', lookup_expr='lte', required=False)
+    pass
+#     min_date = django_filters.DateFilter(field_name='key__matching_date', lookup_expr='gte', required=False)
+#     max_date = django_filters.DateFilter(field_name='key__matching_date', lookup_expr='lte', required=False)
 
-    class Meta:
-        model = DealerParsing
-        fields = ['min_date', 'max_date']
+#     class Meta:
+#         model = Match
+#         fields = ['min_date', 'max_date']
 
 
 class DealerParsingIsPostponedFilter(django_filters.FilterSet):
