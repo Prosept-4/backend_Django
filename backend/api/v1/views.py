@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema_view, extend_schema
 from rest_framework import viewsets
+from rest_framework import filters
 from rest_framework.decorators import action
 from rest_framework.mixins import UpdateModelMixin
 from rest_framework.response import Response
@@ -62,8 +63,9 @@ class DealerParsingViewSet(viewsets.ModelViewSet):
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend,]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter,]
     filterset_class = DealerParsingFilter
+    search_fields = ['product_name']
 
     def update(self, request, *args, **kwargs):
         """
