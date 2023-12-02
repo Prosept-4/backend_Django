@@ -65,7 +65,7 @@ class DealerParsingViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter,]
     filterset_class = DealerParsingFilter
-    search_fields = ['product_name']
+    search_fields = ['product_name', 'dealer_id__name']
 
     def update(self, request, *args, **kwargs):
         """
