@@ -79,6 +79,9 @@ class DealerParsingPostponeSerializer(serializers.ModelSerializer):
         representation['product_name'] = instance.product_name
         representation['product_key'] = instance.product_key
         representation['postpone_date'] = instance.postpone_date
+        representation['product_url'] = instance.product_url
+        representation['price'] = instance.price
+
         return representation
 
     def update(self, instance, validated_data):
@@ -152,6 +155,8 @@ class DealerParsingNoMatchesSerializer(serializers.ModelSerializer):
         representation['product_key'] = instance.product_key
         representation[
             'has_no_matches_toggle_date'] = instance.has_no_matches_toggle_date
+        representation['product_url'] = instance.product_url
+        representation['price'] = instance.price
         return representation
 
     def update(self, instance, validated_data):
@@ -222,11 +227,13 @@ class MatchSerializer(serializers.ModelSerializer):
         # Добавляем необходимые поля из связанного объекта DealerParsing и Dealer
         representation['dealer_name'] = dealer_parsing.dealer_id.name
         representation['dealer_product_name'] = dealer_parsing.product_name
-        representation['dealer_product_key'] = dealer_parsing.product_key
+        representation['dealer_product_price'] = dealer_parsing.price
         representation['dealer_product_url'] = dealer_parsing.product_url
+        representation['matching_date'] = dealer_parsing.matching_date
         representation['prosept_name_1c'] = prosept_product.name_1c
         representation['prosept_name'] = prosept_product.name
         representation['prosept_article'] = prosept_product.article
+        representation['prosept_cost'] = prosept_product.cost
 
         return representation
 
@@ -258,18 +265,20 @@ class MatchingPredictionsSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
-        # Получаем связанный объект DealerParsing
+        # Получаем связанный объект DealerParsing и Products.
         dealer_parsing = instance.dealer_product_id
         prosept_product = instance.prosept_product_id
 
-        # Добавляем необходимые поля из связанного объекта DealerParsing и Dealer
+        # Добавляем необходимые поля из связанного
+        #  объекта DealerParsing и Dealer.
         representation['dealer_name'] = dealer_parsing.dealer_id.name
         representation['dealer_product_name'] = dealer_parsing.product_name
-        representation['dealer_product_key'] = dealer_parsing.product_key
+        representation['dealer_product_price'] = dealer_parsing.price
         representation['dealer_product_url'] = dealer_parsing.product_url
         representation['prosept_name_1c'] = prosept_product.name_1c
         representation['prosept_name'] = prosept_product.name
         representation['prosept_article'] = prosept_product.article
+        representation['prosept_cost'] = prosept_product.cost
 
         return representation
 
