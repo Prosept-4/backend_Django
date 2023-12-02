@@ -10,7 +10,8 @@ from users.views import CustomUserViewSet
 from api.v1.views import (DealerViewSet,
                           DealerParsingViewSet,
                           ProductViewSet,
-                          MatchViewSet)
+                          MatchViewSet,
+                          StatisticViewSet)
 
 router = DefaultRouter()
 
@@ -23,6 +24,7 @@ router.register(r'users', CustomUserViewSet)
 router.register(r'postpone', PostponeViewSet, basename='postpone')
 router.register(r'predictions', MatchingPredictionsViewSet, basename='predictions')
 router.register(r'product', ProductViewSet)
+router.register(r'statistic', StatisticViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

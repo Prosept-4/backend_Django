@@ -3,6 +3,7 @@ from datetime import datetime
 from rest_framework.mixins import UpdateModelMixin
 from django.db.models import Subquery, OuterRef
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -22,6 +23,7 @@ from backend.celery import make_predictions
 from core.pagination import CustomPagination
 from products.models import (Dealer, DealerParsing, Product, Match,
                              MatchingPredictions)
+from .filters import DealerParsingFilter, DealerParsingStatisticFilter
 
 
 class AuthViewSet(viewsets.ViewSet):
@@ -46,6 +48,8 @@ class DealerParsingViewSet(viewsets.ModelViewSet):
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingSerializer
     pagination_class = CustomPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = DealerParsingFilter
 
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
@@ -531,3 +535,13 @@ class AnalysisViewSet(viewsets.ReadOnlyModelViewSet):
                        f'в ML модель. ' + error_message},
             status=HTTP_200_OK
         )
+
+
+class StatisticViewSet(viewsets.ReadOnlyModelViewSet):
+    """Сбор статистики парсинга дилеров"""
+    queryset = DealerParsing.objects.all()
+    serializer_class = DealerParsingSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = DealerParsingStatisticFilter
+    # Пока ничего не получилось.
+    
