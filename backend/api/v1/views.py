@@ -30,10 +30,10 @@ from api.v1.tasks import make_predictions
 from core.pagination import CustomPagination
 from products.models import (Dealer, DealerParsing, Product, Match,
                              MatchingPredictions)
-from .filters import (DealerParsingFilter,
-                      DealerParsingIsMatchedFilter,
-                      DealerParsingIsPostponedFilter,
-                      DealerParsingHasNoMatchesFilter)
+from api.v1.filters import (DealerParsingFilter,
+                            DealerParsingIsMatchedFilter,
+                            DealerParsingIsPostponedFilter,
+                            DealerParsingHasNoMatchesFilter)
 
 
 @extend_schema_view(**LOGOUT_SCHEMA)
