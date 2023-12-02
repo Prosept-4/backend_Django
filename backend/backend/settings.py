@@ -146,6 +146,9 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
 
 DJOSER = {
@@ -179,7 +182,7 @@ SPECTACULAR_SETTINGS = {
     'CONTACT': {
         'name': 'Project repo',
         'url': 'https://github.com/Prosept-4/',
-        'email': '',
+        'email': 'info@prosept.ru',
     },
     'SERVE_INCLUDE_SCHEMA': False,
     'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
