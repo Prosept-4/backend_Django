@@ -51,6 +51,3 @@ class CustomUserViewSet(UserViewSet):
         else:
             # В противном случае возвращаем всех пользователей
             return User.objects.all()
-
-
-

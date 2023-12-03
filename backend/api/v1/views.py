@@ -469,6 +469,10 @@ class MatchingPredictionsViewSet(viewsets.ReadOnlyModelViewSet):
     Позволяет просматривать только актуальные предсказания, которые не имеют
         установленной связи (is_matched=False).
 
+    С помощью фильтра dealer_product_id можно получить актуальные предсказания
+        для конкретного товара дилера. В ответе ожидается в таком случае 10
+        объектов предсказаний.
+
     Attributes:
         queryset (QuerySet): Запрос для получения всех
             объектов MatchingPredictions.
