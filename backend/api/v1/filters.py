@@ -55,3 +55,11 @@ class DealerParsingHasNoMatchesFilter(django_filters.FilterSet):
     class Meta:
         model = DealerParsing
         fields = ['min_date', 'max_date']
+
+
+class PredictionsFilter(django_filters.FilterSet):
+    dealer_product_id = django_filters.NumberFilter(field_name='dealer_product_id', lookup_expr='exact')
+
+    class Meta:
+        model = MatchingPredictions
+        fields = ['dealer_product_id']
