@@ -19,6 +19,27 @@ class DealerSerializer(serializers.ModelSerializer):
 
 class DealerParsingSerializer(serializers.ModelSerializer):
     """Сериализатор отображения спарсеного списка товаров дилеров"""
+    def to_representation(self, instance):
+        """
+        Преобразует данные DealerParsing для представления в JSON.
+
+        Аргументы:
+        - `instance`: экземпляр модели, который нужно сериализовать.
+
+        Возвращает:
+        - `dict`: словарь с данными для представления.
+
+        Пример использования:
+        ```
+        to_representation(instance)
+        """
+        representation = super().to_representation(instance)
+
+        dealer = instance.dealer_id
+
+        representation['dealer_name'] = dealer.name
+
+        return representation
 
     class Meta:
         model = DealerParsing

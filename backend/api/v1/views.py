@@ -64,7 +64,7 @@ class DealerParsingViewSet(viewsets.ModelViewSet):
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter,]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, ]
     filterset_class = DealerParsingFilter
     search_fields = ['product_name', 'dealer_id__name']
 
@@ -119,7 +119,7 @@ class PostponeViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingPostponeSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend,]
+    filter_backends = [DjangoFilterBackend, ]
     filterset_class = DealerParsingIsPostponedFilter
 
     def list(self, request, *args, **kwargs):
@@ -231,7 +231,7 @@ class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingNoMatchesSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend,]
+    filter_backends = [DjangoFilterBackend, ]
     filterset_class = DealerParsingHasNoMatchesFilter
 
     def list(self, request, *args, **kwargs):
@@ -337,6 +337,7 @@ class MatchViewSet(viewsets.ModelViewSet):
     queryset = Match.objects.all().order_by('-key__matching_date')
     serializer_class = MatchSerializer
     pagination_class = CustomPagination
+
     # filter_backends = [DjangoFilterBackend,]
     # filterset_class = DealerParsingIsMatchedFilter
 
@@ -469,10 +470,6 @@ class MatchingPredictionsViewSet(viewsets.ReadOnlyModelViewSet):
     Позволяет просматривать только актуальные предсказания, которые не имеют
         установленной связи (is_matched=False).
 
-    С помощью фильтра dealer_product_id можно получить актуальные предсказания
-        для конкретного товара дилера. В ответе ожидается в таком случае 10
-        объектов предсказаний.
-
     Attributes:
         queryset (QuerySet): Запрос для получения всех
             объектов MatchingPredictions.
@@ -483,7 +480,7 @@ class MatchingPredictionsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = MatchingPredictions.objects.all().order_by('-id')
     serializer_class = MatchingPredictionsSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend,]
+    filter_backends = [DjangoFilterBackend, ]
     filterset_class = PredictionsFilter
 
 
@@ -550,11 +547,21 @@ class AnalysisViewSet(viewsets.ViewSet):
         )
 
 
-class StatisticViewSet(viewsets.ReadOnlyModelViewSet):
+class StatisticViewSet(viewsets.ViewSet):
     """Сбор статистики парсинга дилеров"""
     queryset = DealerParsing.objects.all()
-    serializer_class = DealerParsingSerializer
-    filter_backends = [DjangoFilterBackend,]
-    filterset_class = DealerParsingIsMatchedFilter
-    # Пока ничего не получилось.
-    
+
+    @action(detail=False, methods=['get'])
+    def statistic(self, request, *args, **kwargs):
+        total_records = self.queryset.count()
+        matching_records = self.queryset.filter(is_matched=True).count()
+        postponed_records = self.queryset.filter(is_postponed=True).count()
+        no_matches_records = self.queryset.filter(has_no_matches=True).count()
+        data = {
+            'is_matching': matching_records,
+            'postponed': postponed_records,
+            'has_no_matches': no_matches_records,
+            'total': total_records,
+        }
+
+        return Response(data, status=HTTP_200_OK)
