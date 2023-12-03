@@ -3,6 +3,7 @@ celery[redis]==5.2.7
 djoser==2.1.0
 django-cors-headers==4.3.0
 django-import-export==3.3.3
+django-filter==23.4
 djangorestframework==3.14.0
 djangorestframework-simplejwt==4.7.2
 drf-extra-fields==3.7.0
@@ -12,4 +13,3 @@ psycopg2-binary==2.9.9
 python-dotenv==1.0.0
 python-telegram-bot==20.7
 reportlab==3.6.12
-django-filter==23.4
