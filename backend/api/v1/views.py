@@ -509,18 +509,20 @@ class AnalysisViewSet(viewsets.ViewSet):
         # Так же по просьбе DS достаём данные о соответствиях.
 
         prosept_products_queryset = Product.objects.all()
-        dealer_queryset = Dealer.objects.all()
         match_queryset = Match.objects.all()
 
         serialized_prosept_products = serialize('json',
                                                 prosept_products_queryset)
-        serialized_dealers = serialize('json', dealer_queryset)
         serialized_matches = serialize('json', match_queryset)
 
-        json_dealer_data = json.dumps(serializer.data)
+        dump_parsing_data = json.dumps(serializer.data)
+
+        json_parsing_data = json.loads(dump_parsing_data)
         json_prosept_products = json.loads(serialized_prosept_products)
         json_matches = json.loads(serialized_matches)
 
+        json_prosept_data = [item['fields'] for item in json_prosept_products]
+        json_matches_data = [item['fields'] for item in json_matches]
         # Проверим заведён ли у пользователя Telegram ID.
         # Это нужно для отправки ему сообщения о готовности подбора или
         # информации об ошибках.
@@ -538,11 +540,15 @@ class AnalysisViewSet(viewsets.ViewSet):
 
         # Запускаем задачу в фоновом режиме.
         # Здесь передаём данные в celery, а после в ML модель.
-        make_predictions.delay(json_dealer_data, chat_id)
+        make_predictions.delay(json_parsing_data,
+                               json_prosept_data,
+                               json_matches_data,
+                               chat_id)
+
+        # Тут пока тестируем подключение к DS.
 
         return Response(
-            {'detail': f'Данные успешно переданы '
-                       f'в ML модель. ' + error_message},
+            json_matches_data,
             status=HTTP_200_OK
         )
 

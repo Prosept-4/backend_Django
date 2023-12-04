@@ -124,6 +124,11 @@ class DealerParsingPostponeSerializer(serializers.ModelSerializer):
         else:
             instance.postpone_date = datetime.now().strftime("%Y-%m-%d")
 
+        instance.is_matched = False
+        instance.matching_date = None
+        instance.has_no_matches = False
+        instance.has_no_matches_toggle_date = None
+
         instance.save()
         return instance
 
@@ -200,6 +205,11 @@ class DealerParsingNoMatchesSerializer(serializers.ModelSerializer):
             instance.has_no_matches_toggle_date = datetime.now().strftime(
                 "%Y-%m-%d")
 
+        instance.is_postponed = False
+        instance.postpone_date = None
+        instance.is_matched = False
+        instance.matching_date = None
+
         instance.save()
         return instance
 
@@ -273,7 +283,15 @@ class MatchPartialUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # Обновляем данные
         instance.key = validated_data.get('key', instance.key)
-        instance.key.matching_date = datetime.now().strftime("%Y-%m-%d")
+        if instance.key.is_matched is False:
+            instance.key.matching_date = None
+        else:
+            instance.key.matching_date = datetime.now().strftime("%Y-%m-%d")
+        instance.key.is_postponed = False
+        instance.key.postpone_date = None
+        instance.key.has_no_matches = False
+        instance.key.has_no_matches_toggle_date = None
+
         instance.save()
         return instance
 
