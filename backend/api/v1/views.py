@@ -526,31 +526,30 @@ class AnalysisViewSet(viewsets.ViewSet):
         # Проверим заведён ли у пользователя Telegram ID.
         # Это нужно для отправки ему сообщения о готовности подбора или
         # информации об ошибках.
-        error_message = ''
+
+        # Получаем текущего пользователя
+        current_user = request.user
+        email = current_user.email
+
         try:
-            # Получаем текущего пользователя
-            current_user = request.user
-            # Проверяем, есть ли у пользователя telegram_id
+            # Проверяем, есть ли у пользователя telegram_id.
             chat_id = current_user.telegram_id
 
         except Exception as error:
-            error_message = ('Telegram ID не задан. Сообщение в '
-                             'Telegram не будет отправлено.')
             chat_id = None
+
 
         # Запускаем задачу в фоновом режиме.
         # Здесь передаём данные в celery, а после в ML модель.
         make_predictions.delay(json_parsing_data,
                                json_prosept_data,
                                json_matches_data,
+                               email,
                                chat_id)
 
         # Тут пока тестируем подключение к DS.
 
-        return Response(
-            json_matches_data,
-            status=HTTP_200_OK
-        )
+        return Response('Ку', status=HTTP_200_OK)
 
 
 class StatisticViewSet(viewsets.ViewSet):

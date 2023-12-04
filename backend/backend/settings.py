@@ -6,7 +6,11 @@ from django.core.management.utils import get_random_secret_key
 from dotenv import load_dotenv
 
 from core.environment import (SECRET_KEY, DEBUG, ALLOWED_HOSTS,
-                              DB_ENGINE, IS_LOGGING)
+                              DB_ENGINE, IS_LOGGING,
+                              EMAIL_HOST_ENV, EMAIL_PORT_ENV,
+                              EMAIL_USE_TLS_ENV, EMAIL_USE_SSL_ENV,
+                              EMAIL_HOST_USER_ENV, EMAIL_HOST_PASSWORD_ENV,
+                              DEFAULT_FROM_EMAIL_ENV)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -193,3 +197,11 @@ SPECTACULAR_SETTINGS = {
     'SORT_OPERATIONS': True,
     'SCHEMA_PATH_PREFIX': r'/api/',
 }
+
+EMAIL_HOST = EMAIL_HOST_ENV
+EMAIL_PORT = EMAIL_PORT_ENV
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = EMAIL_HOST_USER_ENV
+EMAIL_HOST_PASSWORD = EMAIL_HOST_PASSWORD_ENV
+DEFAULT_FROM_EMAIL = DEFAULT_FROM_EMAIL_ENV

@@ -17,15 +17,6 @@ services:
     image: redis:7.0.5-alpine
     hostname: redis
 
-  frontend:
-    build:
-      context: ../../frontend
-      dockerfile: Dockerfile
-    volumes:
-      - static:/app/build
-    depends_on:
-      - backend
-
   backend:
     container_name: matching-backend
     depends_on:
