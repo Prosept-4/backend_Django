@@ -188,29 +188,6 @@ MATCH_SCHEMA = {
                     'DealerParsing, Dealer и Product.',
         summary='Создать новое соответствие в БД, связав объекты '
                 'DealerParsing, Dealer и Product.',
-        parameters=[
-            OpenApiParameter(
-                name='key',
-                location=OpenApiParameter.QUERY,
-                description='Артикул продукта.',
-                required=True,
-                type=str,
-            ),
-            OpenApiParameter(
-                name='dealer_id',
-                location=OpenApiParameter.QUERY,
-                description='ID дилера.',
-                required=True,
-                type=int,
-            ),
-            OpenApiParameter(
-                name='product_id',
-                location=OpenApiParameter.QUERY,
-                description='ID продукта.',
-                required=True,
-                type=int,
-            ),
-        ],
     ),
     'partial_update': extend_schema(
         description='Частичное обновление информации соответствия товара '
