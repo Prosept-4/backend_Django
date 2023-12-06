@@ -1,7 +1,7 @@
 import django_filters
 from django.db.models import Exists, OuterRef
 
-from products.models import DealerParsing, MatchingPredictions, Match
+from products.models import DealerParsing, MatchingPredictions, Match, Product
 
 
 class DealerParsingFilter(django_filters.FilterSet):
@@ -63,3 +63,11 @@ class PredictionsFilter(django_filters.FilterSet):
     class Meta:
         model = MatchingPredictions
         fields = ['dealer_product_id']
+
+
+class ProductFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(field_name='name_1c', lookup_expr='icontains')
+
+    class Meta:
+        model = Product
+        fields = ['name_1c']

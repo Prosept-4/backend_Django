@@ -9,6 +9,7 @@ from backend.celery import app
 from backend.settings import DEFAULT_FROM_EMAIL
 from core.environment import BOT_TOKEN
 from products.models import MatchingPredictions
+from script import main_function
 
 bot = Bot(token=BOT_TOKEN)
 logger = logging.getLogger(__name__)
@@ -72,27 +73,39 @@ async def send_telegram_message(chat_id, email, message):
 
 
 @app.task(rate_limit='1/m')
-def make_predictions(parser, products, matches, email, chat_id=None):
-    try:
-        # TODO: Сюда ставим вызов ML модели, передаём в неё массив для анализа.
+def make_predictions(json_parser, json_products, email, chat_id=None):
+    # TODO: Сюда ставим вызов ML модели, передаём в неё массив для анализа.
+    message = f'Query -   {json_parser}.\n\n query2  - {json_products}'
+    asyncio.run(send_telegram_message(chat_id, email, message))
+    ml_results = main_function(json_parser, json_products)
 
-        # ml_results = start_ml(dealer_data,
-        #                       prosept_products,
-        #                       matches)
+    # logger.error(ml_results)
+    for result in ml_results:
+        for dealer_product_id, *prosept_product_ids in result.items():
+            for procept_id in prosept_product_ids:
+                MatchingPredictions.objects.create(
+                    dealer_product_id=int(dealer_product_id),
+                    prosept_product_id=str(procept_id)
+                )
 
-        # Обработка результатов ML и создание записей в БД
-        # for dealer_product_id, prosept_product_ids in ml_results.items():
-        #     for prosept_product_id in prosept_product_ids:
-        #         MatchingPredictions.objects.create(
-        #             dealer_product_id=dealer_product_id,
-        #             prosept_product_id=prosept_product_id
-        #         )
+    # for zapis in ml_results:
+    #     dealer_product_id, *prosept_product_ids = zapis
+    #     for znachenie in prosept_product_ids:
+    #             MatchingPredictions.objects.create(
+    #                 dealer_product_id=int(dealer_product_id),
+    #                 prosept_product_id=str(znachenie)
+    #             )
 
-        message = 'Расчёт соответствий завершён успешно.'
-        logger.info(message)
+    # Обработка результатов ML и создание записей в БД
+    # for zapis in ml_results:
+    #     for dealer_product_id, prosept_product_ids in zapis.items():
+    #         for prosept_product_id in prosept_product_ids:
+    #             MatchingPredictions.objects.create(
+    #                 dealer_product_id=dealer_product_id,
+    #                 prosept_product_id=prosept_product_id
+    #             )
 
-    except Exception as error:
-        message = f'Расчёт завершён с ошибкой: {error}'
-        logger.error(message)
+    message = f'Расчёт соответствий завершён успешно.'
+    logger.info(message)
 
     asyncio.run(send_telegram_message(chat_id, email, message))

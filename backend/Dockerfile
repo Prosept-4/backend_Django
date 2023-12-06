@@ -16,6 +16,11 @@ COPY requirements.txt .
 
 RUN pip install -r requirements.txt --no-cache-dir
 
+RUN pip install spacy==3.7.2
+
+RUN python -m spacy download ru_core_news_sm
+RUN python -m spacy download en_core_web_sm
+
 COPY . .
 
 RUN dos2unix run_django.sh
