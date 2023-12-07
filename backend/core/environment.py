@@ -11,7 +11,7 @@ load_dotenv()
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(' ')
 DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite3')  # sqlite3 или postgresql
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 IS_LOGGING = os.getenv('IS_LOGGING', 'False') == 'True'
 SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
 

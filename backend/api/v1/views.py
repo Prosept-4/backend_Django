@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from html import unescape
 
 from django.core.serializers import serialize
 from django.db.models import Subquery, OuterRef
@@ -479,7 +480,7 @@ class MatchingPredictionsViewSet(viewsets.ReadOnlyModelViewSet):
             сериализатора MatchingPredictions.
         pagination_class (CustomPagination): Класс пагинации.
     """
-    queryset = MatchingPredictions.objects.all().order_by('-id')
+    queryset = MatchingPredictions.objects.all().order_by('id')
     serializer_class = MatchingPredictionsSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, ]
@@ -503,45 +504,35 @@ class AnalysisViewSet(viewsets.ViewSet):
         :return:
         """
         existing_predictions_subquery = MatchingPredictions.objects.filter(
-            dealer_product_id=OuterRef('pk')
+            dealer_product_id=OuterRef('product_key')
         ).values('dealer_product_id')
 
         dealer_parsing_entries = DealerParsing.objects.filter(
             is_matched=False
         ).exclude(
-            pk__in=Subquery(existing_predictions_subquery)
+            product_key__in=Subquery(existing_predictions_subquery)
         )
 
         # Достаём данные о продуктах Просепт и дилеров.
 
         prosept_products_queryset = Product.objects.all()
-        match_queryset = Match.objects.all()
 
         serialized_dealer_products = serialize('json',
                                                 dealer_parsing_entries)
 
         serialized_prosept_products = serialize('json',
                                                 prosept_products_queryset)
-        serialized_matches = serialize('json', match_queryset)
 
         dump_parsing_data = json.loads(serialized_dealer_products)
         json_prosept_data = json.loads(serialized_prosept_products)
-        json_matches_data = json.loads(serialized_matches)
 
         json_dealer_data = [item['fields'] for item in dump_parsing_data]
         json_prosept_data = [item['fields'] for item in json_prosept_data]
-        json_matches_data = [item['fields'] for item in json_matches_data]
 
         # Это нужно для отправки ему сообщения о готовности подбора или
         # информации об ошибках.
-        dump_parsing_data = json.dumps(json_dealer_data)
-        json_prosept_data = json.dumps(json_prosept_data)
-        json_matches_data = json.dumps(json_matches_data)
-
-        # dump_parsing_data = json.loads(dump_parsing_data)
-        # json_prosept_data = json.loads(json_prosept_data)
-        # json_matches_data = json.loads(json_matches_data)
-
+        dump_parsing_data = json.dumps(json_dealer_data, ensure_ascii=False)
+        json_prosept_data = json.dumps(json_prosept_data, ensure_ascii=False)
 
         # Получаем текущего пользователя
         current_user = request.user
@@ -556,7 +547,8 @@ class AnalysisViewSet(viewsets.ViewSet):
         for task_info in task_list.values():
             for task in task_info:
                 if 'make_predictions' in task['name']:
-                    return Response(f'Анализ уже запущен!', status=HTTP_400_BAD_REQUEST)
+                    return Response(f'Анализ уже запущен!',
+                                    status=HTTP_400_BAD_REQUEST)
 
         # Проверим заведён ли у пользователя Telegram ID.
         try:

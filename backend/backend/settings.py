@@ -58,12 +58,12 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -179,9 +179,15 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-]
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "http://localhost",
+#     "http://localhost:8000",
+#     "http://localhost:80",
+# ]
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Prosept hackathon project API',
@@ -205,3 +211,4 @@ EMAIL_USE_SSL = True
 EMAIL_HOST_USER = EMAIL_HOST_USER_ENV
 EMAIL_HOST_PASSWORD = EMAIL_HOST_PASSWORD_ENV
 DEFAULT_FROM_EMAIL = DEFAULT_FROM_EMAIL_ENV
+

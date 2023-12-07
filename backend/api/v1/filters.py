@@ -58,7 +58,7 @@ class DealerParsingHasNoMatchesFilter(django_filters.FilterSet):
 
 
 class PredictionsFilter(django_filters.FilterSet):
-    dealer_product_id = django_filters.NumberFilter(field_name='dealer_product_id', lookup_expr='exact')
+    dealer_product_id = django_filters.CharFilter(field_name='dealer_product_id', lookup_expr='exact')
 
     class Meta:
         model = MatchingPredictions

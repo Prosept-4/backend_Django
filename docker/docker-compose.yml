@@ -2,6 +2,7 @@ version: '3.3'
 
 volumes:
   pg_data:
+  static:
 
 services:
 
@@ -17,6 +18,24 @@ services:
     image: redis:7.0.5-alpine
     hostname: redis
 
+  flower:
+    image: mher/flower:0.9.7
+    command: [ 'flower', '--broker=redis://redis:6379', '--port=5555' ]
+    ports:
+      - 5557:5555
+    depends_on:
+      - redis
+
+  frontend:
+    container_name: matching-frontend
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    volumes:
+      - static:/app/build
+    depends_on:
+      - backend
+
   backend:
     container_name: matching-backend
     depends_on:
@@ -27,5 +46,16 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     env_file: .env
+    volumes:
+      - static:/app/backend_static/
+
+  nginx:
+    container_name: matching-nginx
+    build:
+      context: ../nginx/local
+      dockerfile: Dockerfile
+    restart: always
+    volumes:
+      - static:/app/static/
     ports:
-      - "8000:8000"
+      - "80:80"
