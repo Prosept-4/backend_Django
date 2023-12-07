@@ -316,7 +316,8 @@ class MatchingPredictionsSerializer(serializers.ModelSerializer):
         representation['product_url'] = dealer_parsing.product_url
         representation['name_1c'] = prosept_product.name_1c
         representation['name'] = prosept_product.name
-        representation['id_product'] = prosept_product.article
+        representation['id_product'] = prosept_product.id_product
+        representation['article'] = prosept_product.article
         representation['cost'] = prosept_product.cost
 
         return representation
