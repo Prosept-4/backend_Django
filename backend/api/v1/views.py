@@ -19,7 +19,9 @@ from rest_framework.status import (HTTP_200_OK, HTTP_201_CREATED,
 from api.v1.filters import (DealerParsingFilter,
                             DealerParsingIsPostponedFilter,
                             DealerParsingHasNoMatchesFilter,
-                            PredictionsFilter, ProductFilter)
+                            PredictionsFilter,
+                            StatisticFilter)
+from api.v1.filters import (ProductFilter)
 from api.v1.schemas import (LOGOUT_SCHEMA, DEALER_SCHEMA,
                             DEALER_PARSING_SCHEMA, PRODUCT_SCHEMA,
                             POSTPONE_SCHEMA, NO_MATCHES_SCHEMA, MATCH_SCHEMA,
@@ -36,12 +38,6 @@ from backend.celery import app
 from core.pagination import CustomPagination
 from products.models import (Dealer, DealerParsing, Product, Match,
                              MatchingPredictions)
-from api.v1.filters import (DealerParsingFilter,
-                            DealerParsingIsMatchedFilter,
-                            DealerParsingIsPostponedFilter,
-                            DealerParsingHasNoMatchesFilter,
-                            PredictionsFilter,
-                            StatisticFilter)
 
 
 @extend_schema_view(**LOGOUT_SCHEMA)
@@ -284,7 +280,7 @@ class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingNoMatchesSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend,]
+    filter_backends = [DjangoFilterBackend, ]
     filterset_class = DealerParsingHasNoMatchesFilter
 
     def list(self, request, *args, **kwargs):
