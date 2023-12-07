@@ -319,7 +319,7 @@ class MatchingPredictions(models.Model):
         DealerParsing,
         verbose_name='Продукт Дилера',
         related_name='predictions',
-        to_field='id',
+        to_field='product_key',
         on_delete=models.CASCADE,
     )
 

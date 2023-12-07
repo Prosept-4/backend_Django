@@ -1,13 +1,14 @@
 import json
 from datetime import datetime
+from html import unescape
 
 from django.core.serializers import serialize
 from django.db.models import Subquery, OuterRef
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema_view, extend_schema
-from rest_framework import viewsets
 from rest_framework import filters
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.mixins import UpdateModelMixin
 from rest_framework.response import Response
@@ -16,6 +17,10 @@ from rest_framework.status import (HTTP_200_OK, HTTP_201_CREATED,
                                    HTTP_404_NOT_FOUND,
                                    HTTP_405_METHOD_NOT_ALLOWED)
 
+from api.v1.filters import (DealerParsingFilter,
+                            DealerParsingIsPostponedFilter,
+                            DealerParsingHasNoMatchesFilter,
+                            PredictionsFilter, ProductFilter)
 from api.v1.schemas import (LOGOUT_SCHEMA, DEALER_SCHEMA,
                             DEALER_PARSING_SCHEMA, PRODUCT_SCHEMA,
                             POSTPONE_SCHEMA, NO_MATCHES_SCHEMA, MATCH_SCHEMA,
@@ -28,6 +33,7 @@ from api.v1.serializers import (DealerSerializer,
                                 DealerParsingNoMatchesSerializer,
                                 MatchingPredictionsSerializer)
 from api.v1.tasks import make_predictions
+from backend.celery import app
 from core.pagination import CustomPagination
 from products.models import (Dealer, DealerParsing, Product, Match,
                              MatchingPredictions)
@@ -85,6 +91,8 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend, ]
+    filterset_class = ProductFilter
 
 
 @extend_schema_view(**POSTPONE_SCHEMA, update=extend_schema(exclude=True))
@@ -370,7 +378,7 @@ class MatchViewSet(viewsets.ModelViewSet):
         dealer_parsing_instance = get_object_or_404(DealerParsing,
                                                     product_key=key)
         dealer_id_instance = get_object_or_404(Dealer, id=dealer_id)
-        product_id_instance = get_object_or_404(Product, id=product_id)
+        product_id_instance = get_object_or_404(Product, id_product=product_id)
 
         # Проверяем, не существует ли уже такого мэтча.
         existing_match = Match.objects.filter(key=dealer_parsing_instance,
@@ -382,7 +390,7 @@ class MatchViewSet(viewsets.ModelViewSet):
                             status=HTTP_400_BAD_REQUEST)
 
         # Создаем новый мэтч
-        Match.objects.create(
+        new_match = Match.objects.create(
             key=dealer_parsing_instance,
             dealer_id=dealer_id_instance,
             product_id=product_id_instance
@@ -394,8 +402,9 @@ class MatchViewSet(viewsets.ModelViewSet):
             "%Y-%m-%d")
         dealer_parsing_instance.save()
 
-        return Response({'detail': 'Связь успешно установлена.'},
-                        status=HTTP_201_CREATED)
+        serializer = MatchSerializer(new_match)
+
+        return Response(serializer.data, status=HTTP_201_CREATED)
 
     def partial_update(self, request, *args, **kwargs):
         """
@@ -478,7 +487,7 @@ class MatchingPredictionsViewSet(viewsets.ReadOnlyModelViewSet):
             сериализатора MatchingPredictions.
         pagination_class (CustomPagination): Класс пагинации.
     """
-    queryset = MatchingPredictions.objects.all().order_by('-id')
+    queryset = MatchingPredictions.objects.all().order_by('id')
     serializer_class = MatchingPredictionsSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, ]
@@ -487,71 +496,83 @@ class MatchingPredictionsViewSet(viewsets.ReadOnlyModelViewSet):
 
 @extend_schema_view(**ANALYSIS_SCHEMA)
 class AnalysisViewSet(viewsets.ViewSet):
+    """
+
+    """
     queryset = None
 
     @action(detail=False, methods=['get'])
     def analyze(self, request, *args, **kwargs):
+        """
+
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
         existing_predictions_subquery = MatchingPredictions.objects.filter(
-            dealer_product_id=OuterRef('pk')
+            dealer_product_id=OuterRef('product_key')
         ).values('dealer_product_id')
 
-        # Получаем все записи DealerParsing с is_matched=False и которых
-        # нет в MatchingPredictions
-        # TODO: ЭТО ПОЙДЁТ НА АНАЛИЗ. QUERYSET
-        #  ТОВАРОВ ДИЛЕРОВ КОТОРЫХ НЕТ В ПРЕДИКШНАХ И КОТОРЫЕ НЕ СМЭТЧЕНЫ.
         dealer_parsing_entries = DealerParsing.objects.filter(
             is_matched=False
         ).exclude(
-            pk__in=Subquery(existing_predictions_subquery)
+            product_key__in=Subquery(existing_predictions_subquery)
         )
-        serializer = DealerParsingSerializer(dealer_parsing_entries, many=True)
 
         # Достаём данные о продуктах Просепт и дилеров.
-        # Так же по просьбе DS достаём данные о соответствиях.
 
         prosept_products_queryset = Product.objects.all()
-        match_queryset = Match.objects.all()
+
+        serialized_dealer_products = serialize('json',
+                                                dealer_parsing_entries)
 
         serialized_prosept_products = serialize('json',
                                                 prosept_products_queryset)
-        serialized_matches = serialize('json', match_queryset)
 
-        dump_parsing_data = json.dumps(serializer.data)
+        dump_parsing_data = json.loads(serialized_dealer_products)
+        json_prosept_data = json.loads(serialized_prosept_products)
 
-        json_parsing_data = json.loads(dump_parsing_data)
-        json_prosept_products = json.loads(serialized_prosept_products)
-        json_matches = json.loads(serialized_matches)
+        json_dealer_data = [item['fields'] for item in dump_parsing_data]
+        json_prosept_data = [item['fields'] for item in json_prosept_data]
 
-        json_prosept_data = [item['fields'] for item in json_prosept_products]
-        json_matches_data = [item['fields'] for item in json_matches]
-        # Проверим заведён ли у пользователя Telegram ID.
         # Это нужно для отправки ему сообщения о готовности подбора или
         # информации об ошибках.
+        dump_parsing_data = json.dumps(json_dealer_data, ensure_ascii=False)
+        json_prosept_data = json.dumps(json_prosept_data, ensure_ascii=False)
 
         # Получаем текущего пользователя
         current_user = request.user
         email = current_user.email
 
+        # Инициализируем celery.
+        celery_app = app.control.inspect()
+        # Заглядываем в текущую очередь задач.
+        task_list = celery_app.active()
+
+        # Если задача уже запущена — вернём ошибку 400.
+        for task_info in task_list.values():
+            for task in task_info:
+                if 'make_predictions' in task['name']:
+                    return Response(f'Анализ уже запущен!',
+                                    status=HTTP_400_BAD_REQUEST)
+
+        # Проверим заведён ли у пользователя Telegram ID.
         try:
-            # Проверяем, есть ли у пользователя telegram_id.
             chat_id = current_user.telegram_id
 
         except Exception as error:
             chat_id = None
 
-
         # Запускаем задачу в фоновом режиме.
-        # Здесь передаём данные в celery, а после в ML модель.
-        make_predictions.delay(json_parsing_data,
+        # Здесь передаём данные в celery.
+        make_predictions.delay(dump_parsing_data,
                                json_prosept_data,
-                               json_matches_data,
                                email,
                                chat_id)
 
-        # Тут пока тестируем подключение к DS.
+        return Response('Задача анализа запущена.', status=HTTP_200_OK)
 
-        return Response('Ку', status=HTTP_200_OK)
-from rest_framework import generics
 
 class StatisticViewSet(viewsets.ReadOnlyModelViewSet):
     """Сбор статистики парсинга дилеров"""
@@ -566,6 +587,7 @@ class StatisticViewSet(viewsets.ReadOnlyModelViewSet):
         matching_records = queryset.filter(is_matched=True).count()
         postponed_records = queryset.filter(is_postponed=True).count()
         no_matches_records = queryset.filter(has_no_matches=True).count()
+
         data = {
             'is_matching': matching_records,
             'postponed': postponed_records,
