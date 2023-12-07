@@ -372,7 +372,7 @@ class MatchViewSet(viewsets.ModelViewSet):
         dealer_parsing_instance = get_object_or_404(DealerParsing,
                                                     product_key=key)
         dealer_id_instance = get_object_or_404(Dealer, id=dealer_id)
-        product_id_instance = get_object_or_404(Product, id=product_id)
+        product_id_instance = get_object_or_404(Product, id_product=product_id)
 
         # Проверяем, не существует ли уже такого мэтча.
         existing_match = Match.objects.filter(key=dealer_parsing_instance,
@@ -384,7 +384,7 @@ class MatchViewSet(viewsets.ModelViewSet):
                             status=HTTP_400_BAD_REQUEST)
 
         # Создаем новый мэтч
-        Match.objects.create(
+        new_match = Match.objects.create(
             key=dealer_parsing_instance,
             dealer_id=dealer_id_instance,
             product_id=product_id_instance
@@ -396,8 +396,9 @@ class MatchViewSet(viewsets.ModelViewSet):
             "%Y-%m-%d")
         dealer_parsing_instance.save()
 
-        return Response({'detail': 'Связь успешно установлена.'},
-                        status=HTTP_201_CREATED)
+        serializer = MatchSerializer(new_match)
+
+        return Response(serializer.data, status=HTTP_201_CREATED)
 
     def partial_update(self, request, *args, **kwargs):
         """
