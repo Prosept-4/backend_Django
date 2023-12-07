@@ -37,6 +37,12 @@ from backend.celery import app
 from core.pagination import CustomPagination
 from products.models import (Dealer, DealerParsing, Product, Match,
                              MatchingPredictions)
+from api.v1.filters import (DealerParsingFilter,
+                            DealerParsingIsMatchedFilter,
+                            DealerParsingIsPostponedFilter,
+                            DealerParsingHasNoMatchesFilter,
+                            PredictionsFilter,
+                            StatisticFilter)
 
 
 @extend_schema_view(**LOGOUT_SCHEMA)
@@ -234,7 +240,7 @@ class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingNoMatchesSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend, ]
+    filter_backends = [DjangoFilterBackend,]
     filterset_class = DealerParsingHasNoMatchesFilter
 
     def list(self, request, *args, **kwargs):
@@ -568,16 +574,20 @@ class AnalysisViewSet(viewsets.ViewSet):
         return Response('Задача анализа запущена.', status=HTTP_200_OK)
 
 
-class StatisticViewSet(viewsets.ViewSet):
+class StatisticViewSet(viewsets.ReadOnlyModelViewSet):
     """Сбор статистики парсинга дилеров"""
     queryset = DealerParsing.objects.all()
+    serializer_class = DealerParsingSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = StatisticFilter
 
-    @action(detail=False, methods=['get'])
-    def statistic(self, request, *args, **kwargs):
-        total_records = self.queryset.count()
-        matching_records = self.queryset.filter(is_matched=True).count()
-        postponed_records = self.queryset.filter(is_postponed=True).count()
-        no_matches_records = self.queryset.filter(has_no_matches=True).count()
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        total_records = queryset.count()
+        matching_records = queryset.filter(is_matched=True).count()
+        postponed_records = queryset.filter(is_postponed=True).count()
+        no_matches_records = queryset.filter(has_no_matches=True).count()
+
         data = {
             'is_matching': matching_records,
             'postponed': postponed_records,

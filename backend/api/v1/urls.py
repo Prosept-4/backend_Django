@@ -27,7 +27,7 @@ router.register(r'postpone', PostponeViewSet, basename='postpone')
 router.register(r'predictions', MatchingPredictionsViewSet,
                 basename='predictions')
 router.register(r'product', ProductViewSet)
-router.register(r'', StatisticViewSet, basename='statistic')
+router.register(r'statistic', StatisticViewSet, basename='statistic')
 
 urlpatterns = [
     path('', include(router.urls)),
