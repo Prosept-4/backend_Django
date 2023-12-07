@@ -107,9 +107,9 @@ def make_predictions(json_parser, json_products, email, chat_id=None):
         message = ('успешно.\n\nДанные записаны в БД. Чтобы загрузить свежие '
                    'данные выберите тип "Несортированные" и '
                    'нажмите "Загрузить".')
-    except Exception:
+    except Exception as error:
         message = ('с ошибкой. Передайте в отдел технической поддержки '
-                   'следующий код ошибки: ...')
+                   f'следующий код ошибки: {error}')
 
     logger.info('Расчёт соответствий завершён ' + message)
 

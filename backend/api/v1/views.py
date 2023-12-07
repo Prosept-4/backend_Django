@@ -61,8 +61,7 @@ class AuthViewSet(viewsets.ViewSet):
         """
         # TODO: Добавить проверку авторизован ли пользователь
 
-        return Response({'detail': 'Вы вышли из системы.'},
-                        status=HTTP_204_NO_CONTENT)
+        return Response(status=HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(**DEALER_SCHEMA)
