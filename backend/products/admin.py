@@ -6,6 +6,12 @@ from products.models import (Dealer, DealerParsing, Product,
 
 
 class DealerAdmin(ImportExportModelAdmin):
+    """
+    Admin класс для модели Dealer.
+
+    Атрибуты:
+        - list_display: Список полей для отображения в списке объектов.
+    """
     list_display = (
         'id',
         'name'
@@ -13,6 +19,12 @@ class DealerAdmin(ImportExportModelAdmin):
 
 
 class DealerParsingAdmin(ImportExportModelAdmin):
+    """
+    Admin класс для модели DealerParsing.
+
+    Атрибуты:
+        - list_display: Список полей для отображения в списке объектов.
+    """
     list_display = (
         'id',
         'product_key',
@@ -31,6 +43,12 @@ class DealerParsingAdmin(ImportExportModelAdmin):
 
 
 class ProductAdmin(ImportExportModelAdmin):
+    """
+    Admin класс для модели Product.
+
+    Атрибуты:
+        - list_display: Список полей для отображения в списке объектов.
+    """
     list_display = (
         'id',
         'id_product',
@@ -51,6 +69,12 @@ class ProductAdmin(ImportExportModelAdmin):
 
 
 class MatchAdmin(ImportExportModelAdmin):
+    """
+    Admin класс для модели Match.
+
+    Атрибуты:
+        - list_display: Список полей для отображения в списке объектов.
+    """
     list_display = (
         'id',
         'key',
@@ -60,6 +84,12 @@ class MatchAdmin(ImportExportModelAdmin):
 
 
 class MatchingPredictionsAdmin(admin.ModelAdmin):
+    """
+    Admin класс для модели MatchingPredictions.
+
+    Атрибуты:
+        - list_display: Список полей для отображения в списке объектов.
+    """
     list_display = (
         'id',
         'prosept_product_id',
