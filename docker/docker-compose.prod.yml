@@ -27,9 +27,7 @@ services:
       - redis
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: primestr/matching_frontend
     volumes:
       - static:/app/dist
     depends_on:
@@ -41,9 +39,7 @@ services:
       - db
       - redis
     restart: always
-    build:
-      context: ../backend
-      dockerfile: Dockerfile
+    image: primestr/matching_backend
     env_file: .env
     volumes:
       - static:/app/backend_static/
@@ -52,9 +48,7 @@ services:
     container_name: matching-nginx
     depends_on:
       - frontend
-    build:
-      context: ../nginx/prod
-      dockerfile: Dockerfile
+    image: primestr/matching_nginx
     restart: always
     volumes:
       - static:/app/static/

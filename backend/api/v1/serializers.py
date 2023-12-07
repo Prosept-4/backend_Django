@@ -311,13 +311,13 @@ class MatchingPredictionsSerializer(serializers.ModelSerializer):
         # Добавляем необходимые поля из связанного
         #  объекта DealerParsing и Dealer.
         representation['dealer_name'] = dealer_parsing.dealer_id.name
-        representation['dealer_product_name'] = dealer_parsing.product_name
-        representation['dealer_product_price'] = dealer_parsing.price
-        representation['dealer_product_url'] = dealer_parsing.product_url
-        representation['prosept_name_1c'] = prosept_product.name_1c
-        representation['prosept_name'] = prosept_product.name
-        representation['prosept_article'] = prosept_product.article
-        representation['prosept_cost'] = prosept_product.cost
+        representation['product_name'] = dealer_parsing.product_name
+        representation['price'] = dealer_parsing.price
+        representation['product_url'] = dealer_parsing.product_url
+        representation['name_1c'] = prosept_product.name_1c
+        representation['name'] = prosept_product.name
+        representation['article'] = prosept_product.article
+        representation['cost'] = prosept_product.cost
 
         return representation
 

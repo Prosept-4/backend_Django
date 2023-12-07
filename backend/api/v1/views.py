@@ -558,13 +558,13 @@ class AnalysisViewSet(viewsets.ViewSet):
             chat_id = None
 
         # Запускаем задачу в фоновом режиме.
-        # Здесь передаём данные в celery, а после в ML модель.
+        # Здесь передаём данные в celery.
         make_predictions.delay(dump_parsing_data,
                                json_prosept_data,
                                email,
                                chat_id)
 
-        return Response('Задача анализа запущена.',status=HTTP_200_OK)
+        return Response('Задача анализа запущена.', status=HTTP_200_OK)
 
 
 class StatisticViewSet(viewsets.ViewSet):

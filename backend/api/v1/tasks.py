@@ -80,11 +80,11 @@ def make_predictions(json_parser, json_products, email, chat_id=None):
 
         for dealer_product_id, prosept_product_ids in ml_results.items():
             dealer_product = DealerParsing.objects.get(product_key=dealer_product_id)
-            for procept_id in prosept_product_ids:
-                procept_product = Product.objects.get(id_product=procept_id)
+            for prosept_id in prosept_product_ids:
+                prosept_product = Product.objects.get(id_product=prosept_id)
                 MatchingPredictions.objects.create(
                     dealer_product_id=dealer_product,
-                    prosept_product_id=procept_product,
+                    prosept_product_id=prosept_product,
                 )
 
         message = (f'успешно.\n\nДанные записаны в БД. Чтобы загрузить свежие '
