@@ -7,7 +7,13 @@ from products.models import (Dealer, DealerParsing, Product,
 
 
 class DealerSerializer(serializers.ModelSerializer):
-    """Сериализатор отображения списка дилеров"""
+    """
+    Сериализатор для отображения списка дилеров.
+
+    Атрибуты класса:
+        - model: Модель, используемая для сериализации;
+        - fields: Список полей модели, которые будут сериализованы.
+    """
 
     class Meta:
         model = Dealer
@@ -18,20 +24,22 @@ class DealerSerializer(serializers.ModelSerializer):
 
 
 class DealerParsingSerializer(serializers.ModelSerializer):
-    """Сериализатор отображения спарсеного списка товаров дилеров"""
+    """
+    Сериализатор для отображения спарсенного списка товаров дилеров.
+
+    Методы:
+        - to_representation: Преобразует данные DealerParsing
+            для представления в JSON.
+    """
     def to_representation(self, instance):
         """
         Преобразует данные DealerParsing для представления в JSON.
 
         Аргументы:
-        - `instance`: экземпляр модели, который нужно сериализовать.
+            - `instance`: экземпляр модели, который нужно сериализовать.
 
         Возвращает:
-        - `dict`: словарь с данными для представления.
-
-        Пример использования:
-        ```
-        to_representation(instance)
+            - `dict`: словарь с данными для представления.
         """
         representation = super().to_representation(instance)
 
@@ -74,12 +82,6 @@ class DealerParsingPostponeSerializer(serializers.ModelSerializer):
 
     Методы:
         - `update`: обновляет данные отложенного элемента.
-
-    Пример использования:
-    ```
-        model = DealerParsing
-        fields = ('id', 'is_postponed')
-    ```
     """
 
     def to_representation(self, instance):
@@ -154,12 +156,6 @@ class DealerParsingNoMatchesSerializer(serializers.ModelSerializer):
 
     Методы:
         - `update`: обновляет данные элемента без соответствий.
-
-    Пример использования:
-    ```
-        model = DealerParsing
-        fields = ('id', 'has_no_matches')
-    ```
     """
 
     def to_representation(self, instance):
@@ -167,14 +163,10 @@ class DealerParsingNoMatchesSerializer(serializers.ModelSerializer):
         Преобразует данные элемента без соответствий для представления в JSON.
 
         Аргументы:
-        - `instance`: экземпляр модели, который нужно сериализовать.
+            - `instance`: экземпляр модели, который нужно сериализовать.
 
         Возвращает:
-        - `dict`: словарь с данными для представления.
-
-        Пример использования:
-        ```
-        to_representation(instance)
+            - `dict`: словарь с данными для представления.
         """
         representation = super().to_representation(instance)
         representation['product_name'] = instance.product_name
@@ -222,7 +214,13 @@ class DealerParsingNoMatchesSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    """Сериализатор отображения списка продуктов"""
+    """
+    Сериализатор для отображения списка продуктов.
+
+    Атрибуты класса:
+        - model: Модель, используемая для сериализации;
+        - fields: Список полей модели, которые будут сериализованы.
+    """
 
     class Meta:
         model = Product
@@ -246,16 +244,31 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class MatchSerializer(serializers.ModelSerializer):
-    """Сериализатор отображения списка мэтчей"""
+    """
+    Сериализатор для отображения списка мэтчей.
+
+    Методы:
+        - to_representation: Преобразует данные мэтча для представления в JSON.
+    """
 
     def to_representation(self, instance):
+        """
+        Преобразует данные мэтча для представления в JSON.
+
+        Параметры:
+            - instance: Экземпляр модели, который нужно сериализовать.
+
+        Возвращает:
+            - dict: Словарь с данными для представления.
+        """
         representation = super().to_representation(instance)
 
         # Получаем связанный объект DealerParsing
         dealer_parsing = instance.key
         prosept_product = instance.product_id
 
-        # Добавляем необходимые поля из связанного объекта DealerParsing и Dealer
+        # Добавляем необходимые поля из связанного объекта
+        # DealerParsing и Dealer.
         representation['dealer_name'] = dealer_parsing.dealer_id.name
         representation['dealer_product_name'] = dealer_parsing.product_name
         representation['dealer_product_price'] = dealer_parsing.price
@@ -279,8 +292,24 @@ class MatchSerializer(serializers.ModelSerializer):
 
 
 class MatchPartialUpdateSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для частичного обновления мэтча.
+
+    Метод:
+        - update: Обновляет данные мэтча.
+    """
 
     def update(self, instance, validated_data):
+        """
+        Обновляет данные мэтча.
+
+        Параметры:
+            - instance: Экземпляр модели, который нужно обновить.
+            - validated_data: Словарь с проверенными данными для обновления.
+
+        Возвращает:
+            - instance: Обновленный экземпляр модели.
+        """
         # Обновляем данные
         instance.key = validated_data.get('key', instance.key)
         if instance.key.is_matched is False:
@@ -301,7 +330,23 @@ class MatchPartialUpdateSerializer(serializers.ModelSerializer):
 
 
 class MatchingPredictionsSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для отображения списка предсказаний совпадений.
+
+    Метод:
+        - to_representation: Преобразует данные предсказания для
+            представления в JSON.
+    """
     def to_representation(self, instance):
+        """
+        Преобразует данные предсказания для представления в JSON.
+
+        Параметры:
+            - instance: Экземпляр модели, который нужно сериализовать.
+
+        Возвращает:
+            - dict: Словарь с данными для представления.
+        """
         representation = super().to_representation(instance)
 
         # Получаем связанный объект DealerParsing и Products.

@@ -1,6 +1,5 @@
 import json
 from datetime import datetime
-from html import unescape
 
 from django.core.serializers import serialize
 from django.db.models import Subquery, OuterRef
@@ -41,9 +40,25 @@ from products.models import (Dealer, DealerParsing, Product, Match,
 
 @extend_schema_view(**LOGOUT_SCHEMA)
 class AuthViewSet(viewsets.ViewSet):
+    """
+    ViewSet для авторизации и выхода из системы.
+
+    Атрибуты:
+        - queryset: Не используется в данном ViewSet.
+    """
 
     @action(detail=False, methods=['post'])
     def logout(self, request):
+        """
+        Метод для выхода из системы.
+
+        Параметры:
+            - request: Запрос, поступивший на сервер.
+
+        Возвращает:
+            - Response: Объект ответа с сообщением о выходе из системы и
+                статусом HTTP_204_NO_CONTENT.
+        """
         # TODO: Добавить проверку авторизован ли пользователь
 
         return Response({'detail': 'Вы вышли из системы.'},
@@ -52,7 +67,14 @@ class AuthViewSet(viewsets.ViewSet):
 
 @extend_schema_view(**DEALER_SCHEMA)
 class DealerViewSet(viewsets.ReadOnlyModelViewSet):
-    """Вьюсет дилеров"""
+    """
+    ViewSet для отображения дилеров.
+
+    Атрибуты:
+        - queryset: Набор данных, предоставляющий все объекты Dealer.
+        - serializer_class: Класс сериализатора для модели Dealer.
+        - pagination_class: Класс пагинации для представления списка дилеров.
+    """
     queryset = Dealer.objects.all()
     serializer_class = DealerSerializer
     pagination_class = CustomPagination
@@ -61,7 +83,18 @@ class DealerViewSet(viewsets.ReadOnlyModelViewSet):
 @extend_schema_view(**DEALER_PARSING_SCHEMA,
                     update=extend_schema(exclude=True))
 class DealerParsingViewSet(viewsets.ModelViewSet):
-    """Вьюсет DealerParsing"""
+    """
+    ViewSet для взаимодействия с моделью DealerParsing.
+
+    Атрибуты:
+        - queryset: Набор данных, предоставляющий все объекты DealerParsing.
+        - serializer_class: Класс сериализатора для модели DealerParsing.
+        - pagination_class: Класс пагинации для представления списка
+            данных DealerParsing.
+        - filter_backends: Список бэкендов фильтрации.
+        - filterset_class: Класс фильтра для данных DealerParsing.
+        - search_fields: Список полей для поиска.
+    """
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingSerializer
     pagination_class = CustomPagination
@@ -81,7 +114,16 @@ class DealerParsingViewSet(viewsets.ModelViewSet):
 
 @extend_schema_view(**PRODUCT_SCHEMA)
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
-    """Вьюсет предоставляющий список продуктов Prosept."""
+    """
+    ViewSet для отображения продуктов Prosept.
+
+    Атрибуты:
+        - queryset: Набор данных, предоставляющий все объекты Product.
+        - serializer_class: Класс сериализатора для модели Product.
+        - pagination_class: Класс пагинации для представления списка продуктов.
+        - filter_backends: Список бэкендов фильтрации.
+        - filterset_class: Класс фильтра для данных Product.
+    """
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     pagination_class = CustomPagination
@@ -176,7 +218,8 @@ class PostponeViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
             - `kwargs`: дополнительные именованные аргументы.
 
         Возвращает:
-            - `Response`: объект ответа с обновленными данными отложенного элемента.
+            - `Response`: объект ответа с обновленными данными
+            отложенного элемента.
 
         Пример использования:
             PATCH /postpone/<id>/
@@ -214,6 +257,8 @@ class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
     - `serializer_class`: класс сериализатора для преобразования данных;
     - `pagination_class`: класс пагинации для разбивки
     результатов на страницы.
+    - filter_backends: Список бэкендов фильтрации.
+    - filterset_class: Класс фильтра для данных DealerParsing.
 
     Методы:
     - `list`: возвращает список элементов без соответствий
@@ -375,9 +420,11 @@ class MatchViewSet(viewsets.ModelViewSet):
         product_id_instance = get_object_or_404(Product, id_product=product_id)
 
         # Проверяем, не существует ли уже такого мэтча.
-        existing_match = Match.objects.filter(key=dealer_parsing_instance,
-                                              dealer_id=dealer_id_instance,
-                                              product_id=product_id_instance).first()
+        existing_match = Match.objects.filter(
+            key=dealer_parsing_instance,
+            dealer_id=dealer_id_instance,
+            product_id=product_id_instance
+        ).first()
 
         if existing_match:
             return Response({'detail': 'Соответствие уже существует.'},
@@ -440,9 +487,10 @@ class MatchViewSet(viewsets.ModelViewSet):
         """
         try:
             instance = self.get_object()
-        except Exception as error:
+        except Exception:
             return Response(
-                {"detail": "Нет совпадений соответствующих данному запросу"},
+                {"detail": "Нет совпадений соответствующих "
+                           "данному запросу"},
                 status=HTTP_404_NOT_FOUND
             )
 
@@ -491,18 +539,21 @@ class MatchingPredictionsViewSet(viewsets.ReadOnlyModelViewSet):
 @extend_schema_view(**ANALYSIS_SCHEMA)
 class AnalysisViewSet(viewsets.ViewSet):
     """
+    ViewSet для проведения анализа данных.
 
+    Атрибуты:
+        - queryset: Не используется в данном ViewSet.
     """
     queryset = None
 
     @action(detail=False, methods=['get'])
     def analyze(self, request, *args, **kwargs):
         """
+        Метод для анализа данных.
 
-        :param request:
-        :param args:
-        :param kwargs:
-        :return:
+        Возвращает:
+            - Response: Объект ответа с сообщением о запуске анализа
+                и статусом HTTP_200_OK.
         """
         existing_predictions_subquery = MatchingPredictions.objects.filter(
             dealer_product_id=OuterRef('product_key')
@@ -519,7 +570,7 @@ class AnalysisViewSet(viewsets.ViewSet):
         prosept_products_queryset = Product.objects.all()
 
         serialized_dealer_products = serialize('json',
-                                                dealer_parsing_entries)
+                                               dealer_parsing_entries)
 
         serialized_prosept_products = serialize('json',
                                                 prosept_products_queryset)
@@ -548,14 +599,14 @@ class AnalysisViewSet(viewsets.ViewSet):
         for task_info in task_list.values():
             for task in task_info:
                 if 'make_predictions' in task['name']:
-                    return Response(f'Анализ уже запущен!',
+                    return Response('Анализ уже запущен!',
                                     status=HTTP_400_BAD_REQUEST)
 
         # Проверим заведён ли у пользователя Telegram ID.
         try:
             chat_id = current_user.telegram_id
 
-        except Exception as error:
+        except Exception:
             chat_id = None
 
         # Запускаем задачу в фоновом режиме.
@@ -569,7 +620,12 @@ class AnalysisViewSet(viewsets.ViewSet):
 
 
 class StatisticViewSet(viewsets.ViewSet):
-    """Сбор статистики парсинга дилеров"""
+    """
+    ViewSet для сбора статистики парсинга дилеров.
+
+    Атрибуты:
+        - queryset: Набор данных, предоставляющий все объекты DealerParsing.
+    """
     queryset = DealerParsing.objects.all()
 
     @action(detail=False, methods=['get'])

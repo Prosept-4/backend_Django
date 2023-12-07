@@ -12,7 +12,7 @@ from users.serializers import CustomUserSerializer
                     resend_activation=extend_schema(exclude=True),
                     reset_password=extend_schema(exclude=True),
                     reset_password_confirm=extend_schema(exclude=True),
-                    set_password=extend_schema(exclude=True),)
+                    set_password=extend_schema(exclude=True), )
 class CustomUserViewSet(UserViewSet):
     """
     Вьюсет для работы с пользователями.
@@ -26,16 +26,6 @@ class CustomUserViewSet(UserViewSet):
 
     Methods:
         get_queryset(self): Возвращает queryset в зависимости от типа запроса.
-        activation(self, *args, **kwargs): Метод для активации пользователя
-            (скрыт в Swagger).
-        resend_activation(self, *args, **kwargs): Метод для повторной
-            отправки активации (скрыт в Swagger).
-        set_password(self, *args, **kwargs): Метод для установки пароля
-            (скрыт в Swagger).
-        reset_password(self, *args, **kwargs): Метод для сброса пароля
-            (скрыт в Swagger).
-        reset_password_confirm(self, *args, **kwargs): Метод для подтверждения
-            сброса пароля (скрыт в Swagger).
     """
 
     serializer_class = CustomUserSerializer
