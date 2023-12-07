@@ -21,10 +21,20 @@ class DealerParsingFilter(django_filters.FilterSet):
         return queryset.annotate(
             is_analyzed=Exists(subquery)
         ).filter(is_analyzed=value)
+
     class Meta:
         model = DealerParsing
         fields = ['min_date', 'max_date', 'is_matched', 'is_postponed',
                   'has_no_matches', 'is_analyzed']
+
+
+class StatisticFilter(django_filters.FilterSet):
+    min_date = django_filters.DateFilter(field_name='date', lookup_expr='gte', required=False)
+    max_date = django_filters.DateFilter(field_name='date', lookup_expr='lte', required=False)
+
+    class Meta:
+        model = DealerParsing
+        fields = ['min_date', 'max_date']
 
 
 class DealerParsingIsMatchedFilter(django_filters.FilterSet):
