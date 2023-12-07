@@ -92,7 +92,7 @@ jobs:
       - name: Push to DockerHub
         uses: docker/build-push-action@v4
         with:
-          context: ../frontend/
+          context: ./frontend/
           push: true
           tags: primestr/prosept_matching_frontend:latest
 
@@ -115,7 +115,7 @@ jobs:
       - name: Push to DockerHub
         uses: docker/build-push-action@v4
         with:
-          context: ../nginx/prod/
+          context: ./nginx/prod/
           push: true
           tags: primestr/prosept_matching_nginx:latest
 
