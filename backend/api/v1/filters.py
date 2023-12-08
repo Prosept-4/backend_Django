@@ -61,8 +61,12 @@ class DealerParsingFilter(django_filters.FilterSet):
 
 
 class StatisticFilter(django_filters.FilterSet):
-    min_date = django_filters.DateFilter(field_name='date', lookup_expr='gte', required=False)
-    max_date = django_filters.DateFilter(field_name='date', lookup_expr='lte', required=False)
+    min_date = django_filters.DateFilter(field_name='date',
+                                         lookup_expr='gte',
+                                         required=False)
+    max_date = django_filters.DateFilter(field_name='date',
+                                         lookup_expr='lte',
+                                         required=False)
 
     class Meta:
         model = DealerParsing
