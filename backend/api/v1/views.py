@@ -270,7 +270,7 @@ class NoMatchesViewSet(viewsets.ReadOnlyModelViewSet, UpdateModelMixin):
 
     Атрибуты запроса:
     - `request`: объект запроса;
-    - `args`: дополнительные аргументы;
+    - `args`: дополнительные  аргументы;
     - `kwargs`: дополнительные именованные аргументы.
 
     Возвращает:
