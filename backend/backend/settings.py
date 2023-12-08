@@ -5,19 +5,23 @@ from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 from dotenv import load_dotenv
 
-load_dotenv()
+from core.environment import (SECRET_KEY, DEBUG, ALLOWED_HOSTS,
+                              DB_ENGINE, IS_LOGGING,
+                              EMAIL_HOST_ENV, EMAIL_PORT_ENV,
+                              EMAIL_USE_TLS_ENV, EMAIL_USE_SSL_ENV,
+                              EMAIL_HOST_USER_ENV, EMAIL_HOST_PASSWORD_ENV,
+                              DEFAULT_FROM_EMAIL_ENV)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
+SECRET_KEY = SECRET_KEY
 
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = DEBUG
+ALLOWED_HOSTS = ALLOWED_HOSTS
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(' ')
+DB_ENGINE = DB_ENGINE
 
-DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite3')  # sqlite3 или postgresql
-
-IS_LOGGING = os.getenv('IS_LOGGING', 'False') == 'True'
+IS_LOGGING = IS_LOGGING
 
 if IS_LOGGING:
     LOGGING = {
@@ -41,11 +45,20 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'products.apps.ProductsConfig',
+    'users.apps.UsersConfig',
+    'rest_framework',
+    'corsheaders',
+    'djoser',
+    'import_export',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -108,7 +121,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
 TIME_ZONE = 'UTC'
 
@@ -124,8 +137,78 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'backend_static')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'users.User'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 FORCE_SCRIPT_NAME = "/"
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],    
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    
+}
+
+DJOSER = {
+    'LOGIN_FIELD': 'email',
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.CustomUserSerializer',
+        'user_delete': 'users.serializers.CustomUserDeleteSerializer',
+    },
+    'USE_CUSTOM_TOKEN_SERIALIZERS': True,
+    'PERMISSIONS': {
+        'user': ['rest_framework.permissions.IsAuthenticated'],
+        'user_list': ['rest_framework.permissions.IsAuthenticated'],
+    },
+}
+
+HIDE_USERS = True
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "http://localhost",
+#     "http://localhost:8000",
+#     "http://localhost:80",
+# ]
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Prosept hackathon project API',
+    'VERSION': '1.0.0',
+    'DESCRIPTION': 'Project from Team 4',
+    'CONTACT': {
+        'name': 'Project repo',
+        'url': 'https://github.com/Prosept-4/',
+        'email': 'info@prosept.ru',
+    },
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'SORT_OPERATIONS': True,
+    'SCHEMA_PATH_PREFIX': r'/api/',
+}
+
+EMAIL_HOST = EMAIL_HOST_ENV
+EMAIL_PORT = EMAIL_PORT_ENV
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = EMAIL_HOST_USER_ENV
+EMAIL_HOST_PASSWORD = EMAIL_HOST_PASSWORD_ENV
+DEFAULT_FROM_EMAIL = DEFAULT_FROM_EMAIL_ENV
+
