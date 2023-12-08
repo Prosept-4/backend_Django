@@ -72,6 +72,7 @@ class StatisticFilter(django_filters.FilterSet):
         model = DealerParsing
         fields = ['min_date', 'max_date']
 
+
 class DealerParsingIsPostponedFilter(django_filters.FilterSet):
     """
     Фильтр для объектов DealerParsing по отложенным товарам.
