@@ -633,11 +633,10 @@ class StatisticViewSet(viewsets.ViewSet):
     filterset_class = StatisticFilter
 
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        total_records = queryset.count()
-        matching_records = queryset.filter(is_matched=True).count()
-        postponed_records = queryset.filter(is_postponed=True).count()
-        no_matches_records = queryset.filter(has_no_matches=True).count()
+        total_records = self.queryset.count()
+        matching_records = self.queryset.filter(is_matched=True).count()
+        postponed_records = self.queryset.filter(is_postponed=True).count()
+        no_matches_records = self.queryset.filter(has_no_matches=True).count()
 
         data = {
             'is_matching': matching_records,
