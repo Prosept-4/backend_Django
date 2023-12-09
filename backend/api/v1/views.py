@@ -624,7 +624,7 @@ class StatisticViewSet(viewsets.ReadOnlyModelViewSet):
     """Сбор статистики парсинга дилеров"""
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend,]
     filterset_class = StatisticFilter
 
     def list(self, request, *args, **kwargs):
