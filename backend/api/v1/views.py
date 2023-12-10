@@ -620,7 +620,7 @@ class AnalysisViewSet(viewsets.ViewSet):
         return Response('Задача анализа запущена.', status=HTTP_200_OK)
 
 
-class StatisticViewSet(viewsets.ViewSet):
+class StatisticViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet для сбора статистики парсинга дилеров.
 
@@ -629,14 +629,15 @@ class StatisticViewSet(viewsets.ViewSet):
     """
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend,]
     filterset_class = StatisticFilter
 
     def list(self, request, *args, **kwargs):
-        total_records = self.queryset.count()
-        matching_records = self.queryset.filter(is_matched=True).count()
-        postponed_records = self.queryset.filter(is_postponed=True).count()
-        no_matches_records = self.queryset.filter(has_no_matches=True).count()
+        queryset = self.filter_queryset(self.get_queryset())
+        total_records = queryset.count()
+        matching_records = queryset.filter(is_matched=True).count()
+        postponed_records = queryset.filter(is_postponed=True).count()
+        no_matches_records = queryset.filter(has_no_matches=True).count()
 
         data = {
             'is_matching': matching_records,
