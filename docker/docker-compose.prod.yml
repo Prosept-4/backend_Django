@@ -33,6 +33,7 @@ services:
     command: cp -r /app/build/. /app/static/.
     volumes:
       - static:/app/static/
+
     depends_on:
       - backend
 
