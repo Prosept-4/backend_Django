@@ -357,13 +357,12 @@ class MatchingPredictionsSerializer(serializers.ModelSerializer):
         #  объекта DealerParsing и Dealer.
         representation['dealer_name'] = dealer_parsing.dealer_id.name
         representation['product_name'] = dealer_parsing.product_name
-        representation['recommended_price'] = dealer_parsing.price
         representation['product_url'] = dealer_parsing.product_url
         representation['name_1c'] = prosept_product.name_1c
         representation['name'] = prosept_product.name
         representation['id_product'] = prosept_product.id_product
         representation['article'] = prosept_product.article
-        representation['cost'] = prosept_product.cost
+        representation['recommended_price'] = prosept_product.cost
 
         return representation
 
