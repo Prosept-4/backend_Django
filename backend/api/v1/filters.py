@@ -31,7 +31,8 @@ class DealerParsingFilter(django_filters.FilterSet):
     has_no_matches = django_filters.BooleanFilter(field_name='has_no_matches',
                                                   required=False)
     is_analyzed = django_filters.BooleanFilter(method='filter_is_analyzed',
-                                               label='Has Predictions')
+                                               label='Has Predictions',
+                                               required=False)
 
     @staticmethod
     def filter_is_analyzed(queryset, name, value):
@@ -47,12 +48,13 @@ class DealerParsingFilter(django_filters.FilterSet):
             - queryset: Отфильтрованный набор данных.
         """
         subquery = MatchingPredictions.objects.filter(
-            dealer_product_id=OuterRef('id')
+            dealer_product_id=OuterRef('product_key')
         ).values('dealer_product_id')[:1]
 
         return queryset.annotate(
             is_analyzed=Exists(subquery)
         ).filter(is_analyzed=value)
+
 
     class Meta:
         model = DealerParsing

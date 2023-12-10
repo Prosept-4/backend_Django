@@ -19,10 +19,11 @@ services:
     hostname: redis
 
   flower:
+    container_name: matching-flower
     image: mher/flower:0.9.7
     command: [ 'flower', '--broker=redis://redis:6379', '--port=5555' ]
     ports:
-      - 5557:5555
+      - "5557:5555"
     depends_on:
       - redis
 
@@ -31,8 +32,9 @@ services:
     build:
       context: ../frontend
       dockerfile: Dockerfile
+    command: cp -r /app/build/. /app/static/.
     volumes:
-      - static:/app/build
+      - static:/app/static/
     depends_on:
       - backend
 
@@ -47,15 +49,15 @@ services:
       dockerfile: Dockerfile
     env_file: .env
     volumes:
-      - static:/app/backend_static/
+      - static:/app/static/
 
   nginx:
     container_name: matching-nginx
     build:
-      context: ../nginx/local
+      context: ../nginx/prod
       dockerfile: Dockerfile
     restart: always
     volumes:
       - static:/app/static/
     ports:
-      - "80:80"
+      - "8500:80"

@@ -621,7 +621,12 @@ class AnalysisViewSet(viewsets.ViewSet):
 
 
 class StatisticViewSet(viewsets.ReadOnlyModelViewSet):
-    """Сбор статистики парсинга дилеров"""
+    """
+    ViewSet для сбора статистики парсинга дилеров.
+
+    Атрибуты:
+        - queryset: Набор данных, предоставляющий все объекты DealerParsing.
+    """
     queryset = DealerParsing.objects.all()
     serializer_class = DealerParsingSerializer
     filter_backends = [DjangoFilterBackend,]
